@@ -1,0 +1,14 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="gazebo_camera" dir="gazebo_camera">
+  <doc>
+    <description>Camera module for gazebo\n Set vehicle pose to the gazebo and retrieve an image from the camera </description>
+  </doc>
+  <header>
+    <file name="gazebo_camera.h"/>
+  </header>
+  <init fun="gazebo_camera_init()"/>
+  <periodic fun="gazebo_camera_periodic()" freq="30.0" autorun="TRUE"/>
+  <makefile>
+    <file name="gazebo_camera.cpp"/>
+  </makefile>
+</module>
