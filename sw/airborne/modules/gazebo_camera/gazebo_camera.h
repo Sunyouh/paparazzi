@@ -20,7 +20,8 @@
 
 /** @file "modules/gazebo_camera/gazebo_camera.h"
  * @author Sunyou Hwang <S.Hwang-1@tudelft.nl>
- * -
+ * Camera module for gazebo simulation
+ * Set vehicle pose to the gazebo model and retrieve an image from camera
  */
 
 #ifndef GAZEBO_CAMERA_H

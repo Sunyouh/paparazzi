@@ -306,7 +306,7 @@
         <arg flag="-n"/>
       </program>
       <program name="GCS">
-        <arg flag="-speech"/>
+        <!--<arg flag="-speech"/>-->
         <arg flag="-maximize"/>
         <arg flag="-center_ac"/>
         <arg flag="-mercator"/>
