@@ -358,7 +358,7 @@
     <!--<define name="GAZEBO_WORLD" value="square" type="string"/>-->
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
 
-    <define name="SIMULATE_VIDEO" value="1"/>
+    <!--<define name="SIMULATE_VIDEO" value="1"/>-->
   </section>
 
   <include href="conf/simulator/gazebo/airframes/simple_fixedwing_w_camera.xml"/>

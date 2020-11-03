@@ -86,7 +86,7 @@
           </noise>
         </camera>
       </sensor>
-        <visual name="front_camera_visual">
+<!--        <visual name="front_camera_visual">
           <pose>0.06 0 0 0 0 0</pose>
           <geometry>
             <box>
@@ -99,7 +99,7 @@
               <uri>__default__</uri>
             </script>
           </material>
-        </visual>
+        </visual> -->
     </link>
     
     <joint name="front_camera_joint" type="fixed">

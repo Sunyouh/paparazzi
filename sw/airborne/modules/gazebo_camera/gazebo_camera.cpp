@@ -171,11 +171,11 @@ inline struct DoubleVect3 to_pprz_ltp(ignition::math::Vector3d xyz)
 }
 
 
-inline ignition::math::Vector3d to_gazebo_3d(LlaCoor_d lla_pprz){
+inline ignition::math::Vector3d to_gazebo_3d(NedCoor_d ned_pprz){
     ignition::math::Vector3d pos_gzb;
-    pos_gzb.X(lla_pprz.lat);
-    pos_gzb.Y(lla_pprz.lon);
-    pos_gzb.Z(lla_pprz.alt);
+    pos_gzb.X(ned_pprz.x);
+    pos_gzb.Y(ned_pprz.y);
+    pos_gzb.Z(-ned_pprz.z);
     return pos_gzb;
 }
 
@@ -416,14 +416,14 @@ static void gazebo_write(void)
 
     // TODO: check coordinates
     // TODO: give proper names for the fns
-    ignition::math::Vector3d gzb_position = to_gazebo_3d(fdm.lla_pos);
+    ignition::math::Vector3d gzb_position = to_gazebo_3d(fdm.ltpprz_pos);
     ignition::math::Quaterniond gzb_quat = to_gazebo_quat(fdm.ltp_to_body_eulers);
 
 //    cout << "fdm_lla: " << fdm.lla_pos.lat << ", " << fdm.lla_pos.lon << ", " << fdm.lla_pos.alt << endl;
-//    cout << "gzb_pos: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
+    cout << "gzb_pos: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
 
-    ignition::math::Pose3d world_pose = link->WorldPose();
-    ignition::math::Vector3d w_position = world_pose.Pos();
+//    ignition::math::Pose3d world_pose = link->WorldPose();
+//    ignition::math::Vector3d w_position = world_pose.Pos();
 //    cout << "wld_pos: " << w_position.X() << ", " << w_position.Y() << ", " << w_position.Z() << endl;
 
     // fdm pos and att to gazebo 3d format
@@ -659,7 +659,7 @@ void gazebo_camera_periodic(void)
     // TODO: check the 'timestep'
     // Update the simulation for a single timestep.
     gazebo::runWorld(model->GetWorld(), 1); // Single timestep?? Should I do something for sync?
-    gazebo::sensors::run_once(); // Is this necessary?
+//    gazebo::sensors::run_once(); // Is this necessary?
 
     // Write position and attitude of the vehicle on gazebo
     gazebo_write();
