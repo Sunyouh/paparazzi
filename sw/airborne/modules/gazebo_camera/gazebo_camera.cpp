@@ -39,6 +39,7 @@
 #include <gazebo/gazebo_config.h>
 
 extern "C" {
+#include "state.h"
 #include "modules/gazebo_camera/gazebo_camera.h"
 #include "nps_fdm.h"
 }
@@ -54,6 +55,9 @@ using namespace std;
 #endif
 #ifndef NPS_GAZEBO_AC_NAME
 #define NPS_GAZEBO_AC_NAME "simple_fixedwing_w_camera"
+#endif
+#ifndef NPS_GAZEBO_SCALE
+#define NPS_GAZEBO_SCALE 0.2
 #endif
 
 // Add video handling functions if req'd.
@@ -96,6 +100,9 @@ static gazebo::sensors::ContactSensorPtr ct;
 static void init_gazebo(void);
 static void gazebo_read(void);
 static void gazebo_write(void);
+
+// For heading fix
+//static float heading_offset = 0.0;
 
 // Conversion routines
 inline struct EcefCoor_d to_pprz_ecef(ignition::math::Vector3d ecef_i)
@@ -170,18 +177,46 @@ inline struct DoubleVect3 to_pprz_ltp(ignition::math::Vector3d xyz)
     return ltp;
 }
 
-
-inline ignition::math::Vector3d to_gazebo_3d(NedCoor_d ned_pprz){
+/// pprz struct to gzb vector3
+inline ignition::math::Vector3d to_gazebo_3d(EcefCoor_d ecef_i)
+{
     ignition::math::Vector3d pos_gzb;
-    pos_gzb.X(ned_pprz.x);
-    pos_gzb.Y(ned_pprz.y);
-    pos_gzb.Z(-ned_pprz.z);
+    pos_gzb.X(ecef_i.x);
+    pos_gzb.Y(ecef_i.y);
+    pos_gzb.Z(ecef_i.z);
+    return pos_gzb;
+}
+
+inline ignition::math::Vector3d to_gazebo_3d(NedCoor_d pos_pprz_d){
+    ignition::math::Vector3d pos_gzb;
+    pos_gzb.X(pos_pprz_d.x);
+    pos_gzb.Y(pos_pprz_d.y);
+    pos_gzb.Z(pos_pprz_d.z);
+    return pos_gzb;
+}
+
+inline ignition::math::Vector3d to_gazebo_3d(EnuCoor_f pos_pprz_f){
+    ignition::math::Vector3d pos_gzb;
+    pos_gzb.X(pos_pprz_f.x);
+    pos_gzb.Y(pos_pprz_f.y);
+    pos_gzb.Z(pos_pprz_f.z);
+    return pos_gzb;
+}
+
+inline ignition::math::Vector3d to_gazebo_3d(LlaCoor_d pos_pprz_d)
+{
+    ignition::math::Vector3d pos_gzb;
+    pos_gzb.X(pos_pprz_d.lat);
+    pos_gzb.Y(pos_pprz_d.lon);
+    pos_gzb.Z(pos_pprz_d.alt);
     return pos_gzb;
 }
 
 inline ignition::math::Quaterniond to_gazebo_quat(DoubleEulers pprz_euler){
     ignition::math::Quaterniond quat_gzb;
-    quat_gzb.Euler(pprz_euler.phi, -pprz_euler.theta, -pprz_euler.psi);
+//    quat_gzb.Euler(-pprz_euler.theta, pprz_euler.phi, -pprz_euler.psi);
+    quat_gzb.Euler(pprz_euler.phi, pprz_euler.theta, pprz_euler.psi);
+
 //    quat_gzb.Yaw(pprz_euler.psi);
 //    quat_gzb.Pitch(pprz_euler.theta);
 //    quat_gzb.Roll(pprz_euler.phi);
@@ -391,6 +426,7 @@ static void gazebo_read(void)
 static void gazebo_write(void)
 {
     // get model link & set pose
+    gazebo::physics::WorldPtr world = model->GetWorld();
     gazebo::physics::LinkPtr link = model->GetLink("body");     // TODO: receive the link name from xml file
 //    fdm.lla_pos = to_pprz_lla(sphere->PositionTransform(pose.Pos(), gazebo::common::SphericalCoordinates::LOCAL,
 //                                                        gazebo::common::SphericalCoordinates::SPHERICAL));
@@ -401,59 +437,141 @@ static void gazebo_write(void)
 //    (fdm.ltp_to_body_quat);
 
     ignition::math::Pose3d setPose;
-    gazebo::common::SphericalCoordinatesPtr sphere;
-//    setPose = ignition::math::Pose3d();
+//    gazebo::common::SphericalCoordinatesPtr sphere;
 
-//    ignition::math::Pose3d lla_pos;
-//    inline struct LlaCoor_d to_pprz_lla(ignition::math::Vector3d lla_i)
-//    {
-//        struct LlaCoor_d lla_p;
-//        lla_p.lat = lla_i.X();
-//        lla_p.lon = lla_i.Y();
-//        lla_p.alt = lla_i.Z();
-//        return lla_p;
-//    }
+    gazebo::common::SphericalCoordinatesPtr sphere = world->SphericalCoords();
+//    ignition::math::Quaterniond pos_rot_quat(0, 0, -M_PI/2);
+//    ignition::math::Quaterniond att_rot_quat(0, -M_PI, -M_PI/2);
+    ignition::math::Quaterniond rot_x(M_PI, 0, 0);
+    ignition::math::Quaterniond rot_y(0, M_PI, 0);
+    ignition::math::Quaterniond rot_z(0 , 0, M_PI);
 
-    // TODO: check coordinates
-    // TODO: give proper names for the fns
-    ignition::math::Vector3d gzb_position = to_gazebo_3d(fdm.ltpprz_pos);
-    ignition::math::Quaterniond gzb_quat = to_gazebo_quat(fdm.ltp_to_body_eulers);
+//    struct EnuCoor_f pos_enu = *stateGetPositionEnu_f();
+
+//    pprz_pos = stateGetPositionEnu_f();
+
+
+    // TODO: check multi-rotor coordinates
+    // TODO: Clean up & check naming
+
+/// lla
+//    ignition::math::Vector3d gzb_lla_pos = to_gazebo_3d(fdm.lla_pos);
+//    ignition::math::Vector3d gzb_lla_to_local = sphere->PositionTransform(gzb_lla_pos,
+//            gazebo::common::SphericalCoordinates::SPHERICAL, gazebo::common::SphericalCoordinates::LOCAL);
+//    ignition::math::Vector3d rot_gzb_pos = gzb_lla_to_local;
+//
+//    cout << "" << endl;
+//    cout << "fdm_lla: " << fdm.lla_pos.lon << ", " << fdm.lla_pos.lat << ", " << fdm.lla_pos.alt << endl;
+//    cout << "gzb_lla: " << gzb_lla_to_local.X() << ", " << gzb_lla_to_local.Y() << ", " << gzb_lla_to_local.Z() << endl;
+//    cout << "rot_lla: " << rot_gzb_pos.X() << ", " << rot_gzb_pos.Y() << ", " << rot_gzb_pos.Z() << endl;
+
+/// ecef
+//    ignition::math::Vector3d gzb_position = to_gazebo_3d(fdm.ecef_pos);
+//    ignition::math::Vector3d ecef_pos = sphere->PositionTransform(gzb_position,
+//            gazebo::common::SphericalCoordinates::ECEF, gazebo::common::SphericalCoordinates::LOCAL);
+//    ignition::math::Vector3d rot_gzb_pos = rot_y.RotateVector(ecef_pos);
+//    rot_gzb_pos.Z(-rot_gzb_pos.Z());
+//
+//    cout << "" << endl;
+//    cout << "gzb_ecef: " << ecef_pos.X() << ", " << ecef_pos.Y() << ", " << ecef_pos.Z() << endl;
+//    cout << "fdm_ecef: " << fdm.ecef_pos.x << ", " << fdm.ecef_pos.y << ", " << fdm.ecef_pos.z << endl;
+//    cout << "rot_ecef: " << rot_gzb_pos.X() << ", " << rot_gzb_pos.Y() << ", " << rot_gzb_pos.Z() << endl;
+
+
+/// ltp
+    ignition::math::Vector3d gzb_ltp_pos = to_gazebo_3d(fdm.ltpprz_pos);
+    ignition::math::Vector3d gzb_ltp_to_local = gzb_ltp_pos;
+    ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(gzb_ltp_to_local);
+
+    // TODO: scale factor
+    ignition::math::Vector3d z_fix_rot_gzb_pos(NPS_GAZEBO_SCALE*rot_gzb_pos.X(),
+                                               NPS_GAZEBO_SCALE*rot_gzb_pos.Y(), NPS_GAZEBO_SCALE*rot_gzb_pos.Z());
+
+
+    /// for multi-rotors, will check it later (coordinate is different)
+//        ignition::math::Vector3d gzb_ltp_to_local = sphere->PositionTransform(gzb_ltp_pos,
+//            gazebo::common::SphericalCoordinates::GLOBAL, gazebo::common::SphericalCoordinates::LOCAL);
+//        ignition::math::Vector3d rot_gzb_pos = rot_z.RotateVector(gzb_ltp_to_local);
+//    ignition::math::Vector3d z_fix_rot_gzb_pos(0.1*rot_gzb_pos.X(), 0.1*rot_gzb_pos.Y(), -0.1*rot_gzb_pos.Z());
+
+//    cout << "" << endl;
+//    cout << "fdm_ltp: " << fdm.ltpprz_pos.x << ", " << fdm.ltpprz_pos.y << ", " << fdm.ltpprz_pos.z << endl;
+//    cout << "gzb_lcl: " << gzb_ltp_to_local.X() << ", " << gzb_ltp_to_local.Y() << ", " << gzb_ltp_to_local.Z() << endl;
+//    cout << "rot_ltp: " << z_fix_rot_gzb_pos.X() << ", " << z_fix_rot_gzb_pos.Y() << ", " << z_fix_rot_gzb_pos.Z() << endl;
+
+
+    /// attitude
+    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
+//    gazebo::common::SphericalCoordinatesPtr sphere = world->SphericalCoords();
+
+    ignition::math::Quaterniond local_to_global_quat(0, 0, sphere->HeadingOffset().Radian());
+    ignition::math::Quaterniond fdm_quat = to_gazebo_quat(fdm.ltp_to_body_eulers);
+//    ignition::math::Quaterniond inv_quat = local_to_global_quat.Inverse();
+//    ignition::math::Quaterniond gzb_quat = local_to_global_quat*fdm_quat;
+//    ignition::math::Quaterniond gzb_quat(0, 0, 0);
+
+//    ignition::math::Vector3d rot_gzb_pos = pos_rot_quat.RotateVector(gzb_position);
+//    ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(gzb_position);
+//    ignition::math::Vector3d rot_gzb_pos = rot_z.RotateVector(gzb_position);
+//    ignition::math::Vector3d rot_gzb_pos = gzb_position;
+
+    ignition::math::Quaterniond pose_rot = pose.Rot();
+    DoubleEulers gzb_to_pprz_euler = to_global_pprz_eulers(local_to_global_quat * pose.Rot());
+    ignition::math::Quaterniond heading_fix_rot = local_to_global_quat.Inverse() * fdm_quat;
+
+    ignition::math::Quaterniond gzb_quat = rot_z*rot_y*fdm_quat;
+//    ignition::math::Quaterniond fix_inv_pitch(gzb_quat.Roll(), -gzb_quat.Pitch(), gzb_quat.Yaw());
+
+//    cout << "" << endl;
+//    cout << "pprz_ltp_b_euler: " << fdm.ltp_to_body_eulers.phi << ", " << fdm.ltp_to_body_eulers.theta << ", " << fdm.ltp_to_body_eulers.psi << endl;
+//    cout << "gzb_raw_euler: " << pose_rot.Roll() << ", " << pose_rot.Pitch() << ", " << pose_rot.Yaw() << endl;
+//    cout << "gzb_to_pprz_euler: " << gzb_to_pprz_euler.phi << ", " << gzb_to_pprz_euler.theta << ", " << gzb_to_pprz_euler.psi << endl;
+//    cout << "heading_fix_euler: " << heading_fix_rot.Roll() << ", " << heading_fix_rot.Pitch() << ", " << heading_fix_rot.Yaw() << endl;
+//    cout << "" << endl;
+
+//    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
+//    ignition::math::Vector3d pose_pos = pose.Pos();
+//    ignition::math::Vector3d pose_pos(0, 0, 1);
+
+//    LlaCoor_d gzb_lla_pos = to_pprz_lla(sphere->PositionTransform(pose_pos, gazebo::common::SphericalCoordinates::LOCAL,
+//                                                        gazebo::common::SphericalCoordinates::SPHERICAL));
+//    ignition::math::Vector3d gzb_lla_position = to_gazebo_3d(gzb_lla_pos);
+//
+//    cout << "" << endl;
+//    cout << "fdm_lla: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
+//    cout << "local_lla: " << rot_gzb_pos.X() << ", " << rot_gzb_pos.Y() << ", " << rot_gzb_pos.Z() << endl;
+//    cout << "" << endl;
+//    cout << "gzb_xyz: " << pose_pos.X() << ", " << pose_pos.Y() << ", " << pose_pos.Z() << endl;
+//    cout << "fdm_lla: " << fdm.lla_pos.lat << ", " << fdm.lla_pos.lon << ", " << fdm.lla_pos.alt << endl;
+//    cout << "gzb_lla: " << gzb_lla_position.X() << ", " << gzb_lla_position.Y() << ", " << gzb_lla_position.Z() << endl;
+//
+//    EcefCoor_d  ecef_pos;
+//    NedCoor_d ltpprz_pos;
+//
+//    EcefCoor_d ecef_gzb = to_pprz_ecef(sphere->PositionTransform(pose_pos, gazebo::common::SphericalCoordinates::LOCAL,
+//                                                                 gazebo::common::SphericalCoordinates::ECEF));
+//    ignition::math::Vector3d gzb_ecef_pos = to_gazebo_3d(ecef_gzb);
+
+//
+//    NedCoor_d ned_gzb = to_pprz_ned(sphere->PositionTransform(pose_pos, gazebo::common::SphericalCoordinates::LOCAL,
+//                                                                 gazebo::common::SphericalCoordinates::GLOBAL));
+//    ignition::math::Vector3d gzb_ned_pos = to_gazebo_3d(ned_gzb);
+//    cout << "gzb_ecef: " << gzb_ned_pos.X() << ", " << gzb_ned_pos.Y() << ", " << gzb_ned_pos.Z() << endl;
+//    cout << "fdm_ecef: " << fdm.ltpprz_pos.x << ", " << fdm.ltpprz_pos.y << ", " << fdm.ltpprz_pos.z << endl;
+
+//    ignition::math::Quaterniond gzb_quat = to_gazebo_quat(local_to_global_quat.RotateVectorReverse(fdm.ltp_to_body_eulers));
 
 //    cout << "fdm_lla: " << fdm.lla_pos.lat << ", " << fdm.lla_pos.lon << ", " << fdm.lla_pos.alt << endl;
-    cout << "gzb_pos: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
+//    cout << "gzb_pos: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
 
 //    ignition::math::Pose3d world_pose = link->WorldPose();
 //    ignition::math::Vector3d w_position = world_pose.Pos();
 //    cout << "wld_pos: " << w_position.X() << ", " << w_position.Y() << ", " << w_position.Z() << endl;
 
-    // fdm pos and att to gazebo 3d format
-//    setPose = to_gazebo_pose(sphere->PositionTransform(gzb_position, gazebo::common::SphericalCoordinates::SPHERICAL,
-//                                             gazebo::common::SphericalCoordinates::LOCAL), gzb_quat);
-
-//    setPose = ignition::math::Pose3d(ignition::math::Vector3d(0,0,0), ignition::math::Quaterniond(0, 0, 0));
-//    setPose = ignition::math::Pose3d(ignition::math::Vector3d(0,0,0), gzb_quat);
-    setPose = ignition::math::Pose3d(gzb_position, gzb_quat);
+    setPose = ignition::math::Pose3d(z_fix_rot_gzb_pos, gzb_quat);
 //    setPose = ignition::math::Pose3d(gzb_position, gzb_quat);
 
-
     model->SetRelativePose(setPose);        // pose 3d; x,y,z, qw,qx,qy,qz
-
-
-//    fdm.lla_pos = to_pprz_lla(sphere->PositionTransform(pose.Pos(), gazebo::common::SphericalCoordinates::LOCAL,
-//                                                        gazebo::common::SphericalCoordinates::SPHERICAL));
-//    fdm.ltp_to_body_eulers = to_global_pprz_eulers(local_to_global_quat * pose.Rot());
-//    double_quat_of_eulers(&(fdm.ltp_to_body_quat), &(fdm.ltp_to_body_eulers));
-
-
-//    for (int i = 0; i < commands_nb; ++i) {
-//        // Thrust setpoint
-//        double sp = autopilot.motors_on ? act_commands[i] : 0.0;  // Normalized thrust setpoint
-//
-//        // Apply force and torque to gazebo model
-//        gazebo::physics::LinkPtr link = model->GetLink(gazebo_actuators.names[i]);
-//        link->AddRelativeForce(ignition::math::Vector3d(0, 0, thrust));
-//        link->AddRelativeTorque(ignition::math::Vector3d(0, 0, torque));
-//    }
 }
 
 #if NPS_SIMULATE_VIDEO

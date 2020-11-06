@@ -74,23 +74,23 @@
     <module name="actuators" type="disco"/>
 
     <!--Cameras-->
-    <module name="video_thread"/>
+    <!--<module name="video_thread"/>-->
 
     <!--<module name="video_capture">-->
       <!--<define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>-->
       <!--<define name="VIDEO_CAPTURE_PATH" value="/home/sunyou/tud/tmp/"/> -->
     <!--</module>-->
 
-    <module name="cv_colorfilter">
-      <define name="COLORFILTER_CAMERA" value="front_camera"/>
-      <!--define name="COLORFILTER_SEND_OBSTACLE" value="TRUE"/-->  <!-- If you want to test out the guided flightplan, uncomment this define-->
-    </module>
+    <!--<module name="cv_colorfilter">-->
+      <!--<define name="COLORFILTER_CAMERA" value="front_camera"/>-->
+      <!--&lt;!&ndash;define name="COLORFILTER_SEND_OBSTACLE" value="TRUE"/&ndash;&gt;  &lt;!&ndash; If you want to test out the guided flightplan, uncomment this define&ndash;&gt;-->
+    <!--</module>-->
 
-    <module name="video_rtp_stream">
-      <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
-      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="4"/>
-      <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
-    </module>
+    <!--<module name="video_rtp_stream">-->
+      <!--<define name="VIEWVIDEO_CAMERA" value="front_camera"/>-->
+      <!--<define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="4"/>-->
+      <!--<define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>-->
+    <!--</module>-->
 
     <!-- Navigation -->    
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/> <!--  required so that RTCM messages are decoded in /subsystems/gps/gps_ubx.c -->
@@ -349,10 +349,10 @@
     <define name="ROLL_RESPONSE_FACTOR" value="20"/>
     <define name="JSBSIM_MODEL" value="&quot;Malolo1&quot;"/>
     <!--define name="JSBSIM_INIT"	value="&quot;Malolo1-IC&quot;"/-->
-    <define name="JSBSIM_LAUNCHSPEED" value="15.0"/>
+    <define name="JSBSIM_LAUNCHSPEED" value="10.0"/>
     <define name="JSBSIM_IR_ROLL_NEUTRAL" value="RadOfDeg(0.)"/>
     <define name="JSBSIM_IR_PITCH_NEUTRAL" value="RadOfDeg(0.)"/>
-    <define name="JSBSIM_MODEL" value="&quot;Malolo1&quot;"/>
+    <!--<define name="JSBSIM_MODEL" value="&quot;Malolo1&quot;"/>-->
 
     <!--<define name="GAZEBO_AC_NAME" value="simple_fixedwing_w_camera" type="string"/>-->
     <!--<define name="GAZEBO_WORLD" value="square" type="string"/>-->

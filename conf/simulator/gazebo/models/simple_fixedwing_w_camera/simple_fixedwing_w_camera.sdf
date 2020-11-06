@@ -1,9 +1,12 @@
 <?xml version='1.0'?>
 <sdf version='1.4'>
   <model name="simple_fixedwing_w_camera">
-    <pose>0 0 .1 0 0 0</pose>
+    <pose>0 0 0 0 0 0</pose>
 
     <link name="body">
+        <pose>0 0 0 0 3.14159 3.14159</pose>
+        <!--<pose>0 0 -.1 0 3.14159 -1.5708</pose>-->
+
       <!--<velocity_decay>
         <linear>0.001</linear>
       </velocity_decay>-->
@@ -34,7 +37,7 @@
           <pose>0.07 0 -0.08 0 0 0</pose>
           <geometry>
             <mesh>
-              <scale>0.1 0.1 0.1</scale>
+              <scale>0.4 0.4 0.4</scale>
               <uri>model://simple_fixedwing_w_camera/body.dae</uri>
             </mesh>
           </geometry>
