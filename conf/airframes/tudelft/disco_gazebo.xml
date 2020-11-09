@@ -46,13 +46,17 @@
       <module name="gazebo_camera">
         <define name="NPS_GAZEBO_AC_NAME" value="simple_fixedwing_w_camera" type="string"/>
         <define name="NPS_GAZEBO_WORLD" value="empty.world" type="string"/>
-        <!--<define name="NPS_SIMULATE_VIDEO" value="1"/>-->
+        <define name="NPS_DEBUG_VIDEO" value="1"/>
+        <define name="NPS_SIMULATE_VIDEO" value="1"/>
       </module>
+<!--      <define name="NPS_DEBUG_VIDEO" value="1"/>-->
     </target>
     
     <!-- ************************************************
                ALL TARGETS
     ************************************************  -->
+    <configure name="NPS_DEBUG_VIDEO" value="1"/>
+
     <!-- Airspeed definitions  -->
     <define name="USE_AIRSPEED" value="1"/>
     <define name="STALL_AIRSPEED" value="8"/>
@@ -74,23 +78,23 @@
     <module name="actuators" type="disco"/>
 
     <!--Cameras-->
-    <!--<module name="video_thread"/>-->
+    <module name="video_thread"/>
 
-    <!--<module name="video_capture">-->
-      <!--<define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>-->
-      <!--<define name="VIDEO_CAPTURE_PATH" value="/home/sunyou/tud/tmp/"/> -->
-    <!--</module>-->
+<!--    <module name="video_capture">-->
+<!--      <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>-->
+<!--      <define name="VIDEO_CAPTURE_PATH" value="/home/sunyou/tud/tmp/"/>-->
+<!--    </module>-->
 
-    <!--<module name="cv_colorfilter">-->
-      <!--<define name="COLORFILTER_CAMERA" value="front_camera"/>-->
-      <!--&lt;!&ndash;define name="COLORFILTER_SEND_OBSTACLE" value="TRUE"/&ndash;&gt;  &lt;!&ndash; If you want to test out the guided flightplan, uncomment this define&ndash;&gt;-->
-    <!--</module>-->
+<!--    <module name="cv_colorfilter">-->
+<!--      <define name="COLORFILTER_CAMERA" value="front_camera"/>-->
+<!--      &lt;!&ndash;define name="COLORFILTER_SEND_OBSTACLE" value="TRUE"/&ndash;&gt;  &lt;!&ndash; If you want to test out the guided flightplan, uncomment this define&ndash;&gt;-->
+<!--    </module>-->
 
-    <!--<module name="video_rtp_stream">-->
-      <!--<define name="VIEWVIDEO_CAMERA" value="front_camera"/>-->
-      <!--<define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="4"/>-->
-      <!--<define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>-->
-    <!--</module>-->
+    <module name="video_rtp_stream">
+      <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
+      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="4"/>
+      <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
+    </module>
 
     <!-- Navigation -->    
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/> <!--  required so that RTCM messages are decoded in /subsystems/gps/gps_ubx.c -->
@@ -359,6 +363,7 @@
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
 
     <!--<define name="SIMULATE_VIDEO" value="1"/>-->
+<!--    <define name="DEBUG_VIDEO" value="1"/>-->
   </section>
 
   <include href="conf/simulator/gazebo/airframes/simple_fixedwing_w_camera.xml"/>

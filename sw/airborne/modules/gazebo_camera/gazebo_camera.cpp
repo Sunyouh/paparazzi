@@ -22,6 +22,7 @@
  * @author Sunyou Hwang <S.Hwang-1@tudelft.nl>
  * Camera module for gazebo simulation
  * Set vehicle pose to the gazebo model and retrieve an image from camera
+ * The actual simulation is running on NPS FDM (e.g. JSBSIM)
  */
 
 
@@ -44,7 +45,6 @@ extern "C" {
 #include "nps_fdm.h"
 }
 
-
 // Copied from nps_fdm_gazebo.cpp & modified
 // Common functions to use Gazebo
 
@@ -58,6 +58,16 @@ using namespace std;
 #endif
 #ifndef NPS_GAZEBO_SCALE
 #define NPS_GAZEBO_SCALE 0.2
+#endif
+#ifndef NPS_DEBUG_VIDEO
+#define NPS_DEBUG_VIDEO 0
+#endif
+
+#if NPS_DEBUG_VIDEO
+// Opencv tools
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #endif
 
 // Add video handling functions if req'd.
@@ -94,7 +104,7 @@ static bool gazebo_initialized = false;
 static gazebo::physics::ModelPtr model = NULL;
 
 // Get contact sensor
-static gazebo::sensors::ContactSensorPtr ct;
+//static gazebo::sensors::ContactSensorPtr ct;
 
 // Helper functions
 static void init_gazebo(void);
@@ -382,6 +392,12 @@ static void init_gazebo(void)
              << endl;
         std::exit(-1);
     }
+
+    // Initialize sensors
+    gazebo::sensors::run_once(true);
+    gazebo::sensors::run_threads();
+    gazebo::runWorld(world, 1);
+    cout << "Sensors initialized..." << endl;
 
     cout << "Gazebo initialized successfully!" << endl;
 }
@@ -737,23 +753,15 @@ static void read_image(struct image_t *img, gazebo::sensors::CameraSensorPtr cam
 }
 #endif
 
-#pragma GCC diagnostic pop // Ignore -Wdeprecated-declarations
-
-
 
     /**
      * Main functions called from xml
      */
 void gazebo_camera_init(void)
 {
-    // Initialize gazebo server & video, set gazebo model pointer
-    init_gazebo();
-
-    // TODO: Check if this work as expected (was in fdm_run loop originally)
-#if NPS_SIMULATE_VIDEO
-    init_gazebo_video();
-#endif
-    gazebo_initialized = true;
+    // Do nothing...
+    // Gazebo initialization should be in the main thread, not here.
+    // If it runs in a different thread, sensors::run_once will throw a silent exception );
 }
 
 void gazebo_camera_periodic(void)
@@ -762,7 +770,6 @@ void gazebo_camera_periodic(void)
 
   if (!gazebo_initialized) {
         init_gazebo();
-        gazebo_read();
 #if NPS_SIMULATE_VIDEO
         init_gazebo_video();
 #endif
@@ -770,20 +777,13 @@ void gazebo_camera_periodic(void)
     }
 //    cout << "Periodic..." << endl;
 
-//    gazebo::physics::WorldPtr world = model->GetWorld();
-//    gazebo::runWorld(world, 5);
-//    cout << "run world.." << endl;
-
-    // TODO: check the 'timestep'
     // Update the simulation for a single timestep.
-    gazebo::runWorld(model->GetWorld(), 1); // Single timestep?? Should I do something for sync?
-//    gazebo::sensors::run_once(); // Is this necessary?
+    gazebo::runWorld(model->GetWorld(), 1); // 1 == iteration
+    gazebo::sensors::run_once(); // Is this necessary? YES, indeed!
 
     // Write position and attitude of the vehicle on gazebo
     gazebo_write();
 
-    // We don't need to read any of sensor measurement
-    //    gazebo_read();
 #if NPS_SIMULATE_VIDEO
     gazebo_read_video();
 #endif
@@ -791,3 +791,4 @@ void gazebo_camera_periodic(void)
 }
 
 
+#pragma GCC diagnostic pop // Ignore -Wdeprecated-declarations

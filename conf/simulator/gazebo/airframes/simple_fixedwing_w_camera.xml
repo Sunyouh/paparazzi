@@ -3,6 +3,6 @@
 <airframe>
   <section name="SIMULATOR" prefix="NPS_">
     <define name="GAZEBO_AC_NAME" value="simple_fixedwing_w_camera" type="string"/>
-    <define name="GAZEBO_WORLD" value="square" type="string"/>
+<!--    <define name="GAZEBO_WORLD" value="square" type="string"/>-->
   </section>
 </airframe>

@@ -7,7 +7,7 @@
     <file name="gazebo_camera.h"/>
   </header>
   <init fun="gazebo_camera_init()"/>
-  <periodic fun="gazebo_camera_periodic()" freq="5" autorun="TRUE"/>
+  <periodic fun="gazebo_camera_periodic()" freq="2" autorun="TRUE"/>
   <makefile target="nps">
     <raw>
       nps.CXXFLAGS += $(shell pkg-config gazebo --cflags)

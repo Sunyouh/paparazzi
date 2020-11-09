@@ -315,6 +315,7 @@
         <arg flag="-zoom" constant="40."/>
       </program>
       <program name="Gazebo"/>
+<!--      <program name="RtpViewer"/>-->
     </session>
     <session name="Simulation - Gazebo + Joystick">
       <program name="Simulator">
