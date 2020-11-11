@@ -46,8 +46,8 @@
       <module name="gazebo_camera">
         <define name="NPS_GAZEBO_AC_NAME" value="simple_fixedwing_w_camera" type="string"/>
         <define name="NPS_GAZEBO_WORLD" value="empty.world" type="string"/>
-        <define name="NPS_DEBUG_VIDEO" value="1"/>
-        <define name="NPS_SIMULATE_VIDEO" value="1"/>
+<!--        <define name="NPS_DEBUG_VIDEO" value="1"/>-->
+<!--        <define name="NPS_SIMULATE_VIDEO" value="1"/>-->
       </module>
 <!--      <define name="NPS_DEBUG_VIDEO" value="1"/>-->
     </target>

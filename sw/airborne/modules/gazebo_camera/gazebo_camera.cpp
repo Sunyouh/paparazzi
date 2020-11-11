@@ -103,12 +103,8 @@ static struct gazebocam_t gazebo_cams[VIDEO_THREAD_MAX_CAMERAS] =
 static bool gazebo_initialized = false;
 static gazebo::physics::ModelPtr model = NULL;
 
-// Get contact sensor
-//static gazebo::sensors::ContactSensorPtr ct;
-
 // Helper functions
 static void init_gazebo(void);
-static void gazebo_read(void);
 static void gazebo_write(void);
 
 // For heading fix
@@ -142,24 +138,6 @@ inline struct LlaCoor_d to_pprz_lla(ignition::math::Vector3d lla_i)
     return lla_p;
 }
 
-inline struct DoubleVect3 to_pprz_body(ignition::math::Vector3d body_g)
-{
-    struct DoubleVect3 body_p;
-    body_p.x = body_g.X();
-    body_p.y = -body_g.Y();
-    body_p.z = -body_g.Z();
-    return body_p;
-}
-
-inline struct DoubleRates to_pprz_rates(ignition::math::Vector3d body_g)
-{
-    struct DoubleRates body_p;
-    body_p.p = body_g.X();
-    body_p.q = -body_g.Y();
-    body_p.r = -body_g.Z();
-    return body_p;
-}
-
 inline struct DoubleEulers to_pprz_eulers(ignition::math::Quaterniond quat)
 {
     struct DoubleEulers eulers;
@@ -188,7 +166,7 @@ inline struct DoubleVect3 to_pprz_ltp(ignition::math::Vector3d xyz)
 }
 
 /// pprz struct to gzb vector3
-inline ignition::math::Vector3d to_gazebo_3d(EcefCoor_d ecef_i)
+inline ignition::math::Vector3d to_gazebo_position(EcefCoor_d ecef_i)
 {
     ignition::math::Vector3d pos_gzb;
     pos_gzb.X(ecef_i.x);
@@ -197,7 +175,7 @@ inline ignition::math::Vector3d to_gazebo_3d(EcefCoor_d ecef_i)
     return pos_gzb;
 }
 
-inline ignition::math::Vector3d to_gazebo_3d(NedCoor_d pos_pprz_d){
+inline ignition::math::Vector3d to_gazebo_position(NedCoor_d pos_pprz_d){
     ignition::math::Vector3d pos_gzb;
     pos_gzb.X(pos_pprz_d.x);
     pos_gzb.Y(pos_pprz_d.y);
@@ -205,7 +183,7 @@ inline ignition::math::Vector3d to_gazebo_3d(NedCoor_d pos_pprz_d){
     return pos_gzb;
 }
 
-inline ignition::math::Vector3d to_gazebo_3d(EnuCoor_f pos_pprz_f){
+inline ignition::math::Vector3d to_gazebo_position(EnuCoor_f pos_pprz_f){
     ignition::math::Vector3d pos_gzb;
     pos_gzb.X(pos_pprz_f.x);
     pos_gzb.Y(pos_pprz_f.y);
@@ -213,7 +191,7 @@ inline ignition::math::Vector3d to_gazebo_3d(EnuCoor_f pos_pprz_f){
     return pos_gzb;
 }
 
-inline ignition::math::Vector3d to_gazebo_3d(LlaCoor_d pos_pprz_d)
+inline ignition::math::Vector3d to_gazebo_position(LlaCoor_d pos_pprz_d)
 {
     ignition::math::Vector3d pos_gzb;
     pos_gzb.X(pos_pprz_d.lat);
@@ -224,53 +202,12 @@ inline ignition::math::Vector3d to_gazebo_3d(LlaCoor_d pos_pprz_d)
 
 inline ignition::math::Quaterniond to_gazebo_quat(DoubleEulers pprz_euler){
     ignition::math::Quaterniond quat_gzb;
-//    quat_gzb.Euler(-pprz_euler.theta, pprz_euler.phi, -pprz_euler.psi);
     quat_gzb.Euler(pprz_euler.phi, pprz_euler.theta, pprz_euler.psi);
-
-//    quat_gzb.Yaw(pprz_euler.psi);
-//    quat_gzb.Pitch(pprz_euler.theta);
-//    quat_gzb.Roll(pprz_euler.phi);
     return quat_gzb;
 }
 
 // External functions, interface with Paparazzi's NPS as declared in nps_fdm.h
 
-/**
- * Update the simulation state.
- * @param launch
- * @param act_commands
- * @param commands_nb
- */
-//void nps_fdm_run_step(
-//        bool launch __attribute__((unused)),
-//        double *act_commands,
-//        int commands_nb)
-//{
-//    // Initialize Gazebo if req'd.
-//    // Initialization is peformed here instead of in nps_fdm_init because:
-//    // - Video devices need to added at this point. Video devices have not been
-//    //   added yet when nps_fdm_init is called.
-//    // - nps_fdm_init runs on a different thread then nps_fdm_run_step, which
-//    //   causes problems with Gazebo.
-//    if (!gazebo_initialized) {
-//        init_gazebo();
-//        gazebo_read();
-//#if NPS_SIMULATE_VIDEO
-//        init_gazebo_video();
-//#endif
-//        gazebo_initialized = true;
-//    }
-//
-//    // Update the simulation for a single timestep.
-//    gazebo::runWorld(model->GetWorld(), 1);
-//    gazebo::sensors::run_once();
-//    gazebo_write(act_commands, commands_nb);
-//    gazebo_read();
-//#if NPS_SIMULATE_VIDEO
-//    gazebo_read_video();
-//#endif
-//
-//}
 
 
 // Internal functions
@@ -403,103 +340,26 @@ static void init_gazebo(void)
 }
 
 /**
- * Read Gazebo's simulation state and store the results in the fdm struct used
- * by NPS.
- *
- * Not all fields are filled at the moment, as some of them are unused by
- * paparazzi (see comments) and others are not available in Gazebo 7
- * (atmosphere).
- */
-static void gazebo_read(void)
-{
-    static ignition::math::Vector3d vel_prev;
-    static double time_prev;
-
-    gazebo::physics::WorldPtr world = model->GetWorld();
-    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
-    ignition::math::Vector3d vel = model->WorldLinearVel();
-    ignition::math::Vector3d ang_vel = model->WorldAngularVel();
-    gazebo::common::SphericalCoordinatesPtr sphere = world->SphericalCoords();
-    ignition::math::Quaterniond local_to_global_quat(0, 0, -sphere->HeadingOffset().Radian());
-
-    /* Fill FDM struct */
-    fdm.time = world->SimTime().Double();
-
-    // Find world acceleration by differentiating velocity
-    // model->GetWorldLinearAccel() does not seem to take the velocity_decay into account!
-    // Derivation of the velocity also follows the IMU implementation of Gazebo itself:
-    // https://bitbucket.org/osrf/gazebo/src/e26144434b932b4b6a760ddaa19cfcf9f1734748/gazebo/sensors/ImuSensor.cc?at=default&fileviewer=file-view-default#ImuSensor.cc-370
-    double dt = fdm.time - time_prev;
-    ignition::math::Vector3d accel = (vel - vel_prev) / dt;
-    vel_prev = vel;
-    time_prev = fdm.time;
-}
-
-/**
  * Write position and attitude to Gazebo.
- * pose comes from fdm.JSBsim
+ * pose comes from fdm.JSBsim (could be any other fdm)
  */
 static void gazebo_write(void)
 {
     // get model link & set pose
     gazebo::physics::WorldPtr world = model->GetWorld();
     gazebo::physics::LinkPtr link = model->GetLink("body");     // TODO: receive the link name from xml file
-//    fdm.lla_pos = to_pprz_lla(sphere->PositionTransform(pose.Pos(), gazebo::common::SphericalCoordinates::LOCAL,
-//                                                        gazebo::common::SphericalCoordinates::SPHERICAL));
 
-    // lla to local
-//    sphere->PositionTransform(fdm.lla_pos,gazebo::common::SphericalCoordinates::SPHERICAL,
-//            gazebo::common::SphericalCoordinates::LOCAL);
-//    (fdm.ltp_to_body_quat);
-
-    ignition::math::Pose3d setPose;
-//    gazebo::common::SphericalCoordinatesPtr sphere;
-
-    gazebo::common::SphericalCoordinatesPtr sphere = world->SphericalCoords();
-//    ignition::math::Quaterniond pos_rot_quat(0, 0, -M_PI/2);
-//    ignition::math::Quaterniond att_rot_quat(0, -M_PI, -M_PI/2);
     ignition::math::Quaterniond rot_x(M_PI, 0, 0);
     ignition::math::Quaterniond rot_y(0, M_PI, 0);
     ignition::math::Quaterniond rot_z(0 , 0, M_PI);
 
-//    struct EnuCoor_f pos_enu = *stateGetPositionEnu_f();
 
-//    pprz_pos = stateGetPositionEnu_f();
-
-
-    // TODO: check multi-rotor coordinates
-    // TODO: Clean up & check naming
-
-/// lla
-//    ignition::math::Vector3d gzb_lla_pos = to_gazebo_3d(fdm.lla_pos);
-//    ignition::math::Vector3d gzb_lla_to_local = sphere->PositionTransform(gzb_lla_pos,
-//            gazebo::common::SphericalCoordinates::SPHERICAL, gazebo::common::SphericalCoordinates::LOCAL);
-//    ignition::math::Vector3d rot_gzb_pos = gzb_lla_to_local;
-//
-//    cout << "" << endl;
-//    cout << "fdm_lla: " << fdm.lla_pos.lon << ", " << fdm.lla_pos.lat << ", " << fdm.lla_pos.alt << endl;
-//    cout << "gzb_lla: " << gzb_lla_to_local.X() << ", " << gzb_lla_to_local.Y() << ", " << gzb_lla_to_local.Z() << endl;
-//    cout << "rot_lla: " << rot_gzb_pos.X() << ", " << rot_gzb_pos.Y() << ", " << rot_gzb_pos.Z() << endl;
-
-/// ecef
-//    ignition::math::Vector3d gzb_position = to_gazebo_3d(fdm.ecef_pos);
-//    ignition::math::Vector3d ecef_pos = sphere->PositionTransform(gzb_position,
-//            gazebo::common::SphericalCoordinates::ECEF, gazebo::common::SphericalCoordinates::LOCAL);
-//    ignition::math::Vector3d rot_gzb_pos = rot_y.RotateVector(ecef_pos);
-//    rot_gzb_pos.Z(-rot_gzb_pos.Z());
-//
-//    cout << "" << endl;
-//    cout << "gzb_ecef: " << ecef_pos.X() << ", " << ecef_pos.Y() << ", " << ecef_pos.Z() << endl;
-//    cout << "fdm_ecef: " << fdm.ecef_pos.x << ", " << fdm.ecef_pos.y << ", " << fdm.ecef_pos.z << endl;
-//    cout << "rot_ecef: " << rot_gzb_pos.X() << ", " << rot_gzb_pos.Y() << ", " << rot_gzb_pos.Z() << endl;
-
+    // TODO: check multi-rotor coordinate
 
 /// ltp
-    ignition::math::Vector3d gzb_ltp_pos = to_gazebo_3d(fdm.ltpprz_pos);
-    ignition::math::Vector3d gzb_ltp_to_local = gzb_ltp_pos;
+    ignition::math::Vector3d gzb_ltp_to_local = to_gazebo_position(fdm.ltpprz_pos);
     ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(gzb_ltp_to_local);
 
-    // TODO: scale factor
     ignition::math::Vector3d z_fix_rot_gzb_pos(NPS_GAZEBO_SCALE*rot_gzb_pos.X(),
                                                NPS_GAZEBO_SCALE*rot_gzb_pos.Y(), NPS_GAZEBO_SCALE*rot_gzb_pos.Z());
 
@@ -517,75 +377,14 @@ static void gazebo_write(void)
 
 
     /// attitude
-    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
+//    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
 //    gazebo::common::SphericalCoordinatesPtr sphere = world->SphericalCoords();
 
-    ignition::math::Quaterniond local_to_global_quat(0, 0, sphere->HeadingOffset().Radian());
     ignition::math::Quaterniond fdm_quat = to_gazebo_quat(fdm.ltp_to_body_eulers);
-//    ignition::math::Quaterniond inv_quat = local_to_global_quat.Inverse();
-//    ignition::math::Quaterniond gzb_quat = local_to_global_quat*fdm_quat;
-//    ignition::math::Quaterniond gzb_quat(0, 0, 0);
-
-//    ignition::math::Vector3d rot_gzb_pos = pos_rot_quat.RotateVector(gzb_position);
-//    ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(gzb_position);
-//    ignition::math::Vector3d rot_gzb_pos = rot_z.RotateVector(gzb_position);
-//    ignition::math::Vector3d rot_gzb_pos = gzb_position;
-
-    ignition::math::Quaterniond pose_rot = pose.Rot();
-    DoubleEulers gzb_to_pprz_euler = to_global_pprz_eulers(local_to_global_quat * pose.Rot());
-    ignition::math::Quaterniond heading_fix_rot = local_to_global_quat.Inverse() * fdm_quat;
-
     ignition::math::Quaterniond gzb_quat = rot_z*rot_y*fdm_quat;
-//    ignition::math::Quaterniond fix_inv_pitch(gzb_quat.Roll(), -gzb_quat.Pitch(), gzb_quat.Yaw());
 
-//    cout << "" << endl;
-//    cout << "pprz_ltp_b_euler: " << fdm.ltp_to_body_eulers.phi << ", " << fdm.ltp_to_body_eulers.theta << ", " << fdm.ltp_to_body_eulers.psi << endl;
-//    cout << "gzb_raw_euler: " << pose_rot.Roll() << ", " << pose_rot.Pitch() << ", " << pose_rot.Yaw() << endl;
-//    cout << "gzb_to_pprz_euler: " << gzb_to_pprz_euler.phi << ", " << gzb_to_pprz_euler.theta << ", " << gzb_to_pprz_euler.psi << endl;
-//    cout << "heading_fix_euler: " << heading_fix_rot.Roll() << ", " << heading_fix_rot.Pitch() << ", " << heading_fix_rot.Yaw() << endl;
-//    cout << "" << endl;
-
-//    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
-//    ignition::math::Vector3d pose_pos = pose.Pos();
-//    ignition::math::Vector3d pose_pos(0, 0, 1);
-
-//    LlaCoor_d gzb_lla_pos = to_pprz_lla(sphere->PositionTransform(pose_pos, gazebo::common::SphericalCoordinates::LOCAL,
-//                                                        gazebo::common::SphericalCoordinates::SPHERICAL));
-//    ignition::math::Vector3d gzb_lla_position = to_gazebo_3d(gzb_lla_pos);
-//
-//    cout << "" << endl;
-//    cout << "fdm_lla: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
-//    cout << "local_lla: " << rot_gzb_pos.X() << ", " << rot_gzb_pos.Y() << ", " << rot_gzb_pos.Z() << endl;
-//    cout << "" << endl;
-//    cout << "gzb_xyz: " << pose_pos.X() << ", " << pose_pos.Y() << ", " << pose_pos.Z() << endl;
-//    cout << "fdm_lla: " << fdm.lla_pos.lat << ", " << fdm.lla_pos.lon << ", " << fdm.lla_pos.alt << endl;
-//    cout << "gzb_lla: " << gzb_lla_position.X() << ", " << gzb_lla_position.Y() << ", " << gzb_lla_position.Z() << endl;
-//
-//    EcefCoor_d  ecef_pos;
-//    NedCoor_d ltpprz_pos;
-//
-//    EcefCoor_d ecef_gzb = to_pprz_ecef(sphere->PositionTransform(pose_pos, gazebo::common::SphericalCoordinates::LOCAL,
-//                                                                 gazebo::common::SphericalCoordinates::ECEF));
-//    ignition::math::Vector3d gzb_ecef_pos = to_gazebo_3d(ecef_gzb);
-
-//
-//    NedCoor_d ned_gzb = to_pprz_ned(sphere->PositionTransform(pose_pos, gazebo::common::SphericalCoordinates::LOCAL,
-//                                                                 gazebo::common::SphericalCoordinates::GLOBAL));
-//    ignition::math::Vector3d gzb_ned_pos = to_gazebo_3d(ned_gzb);
-//    cout << "gzb_ecef: " << gzb_ned_pos.X() << ", " << gzb_ned_pos.Y() << ", " << gzb_ned_pos.Z() << endl;
-//    cout << "fdm_ecef: " << fdm.ltpprz_pos.x << ", " << fdm.ltpprz_pos.y << ", " << fdm.ltpprz_pos.z << endl;
-
-//    ignition::math::Quaterniond gzb_quat = to_gazebo_quat(local_to_global_quat.RotateVectorReverse(fdm.ltp_to_body_eulers));
-
-//    cout << "fdm_lla: " << fdm.lla_pos.lat << ", " << fdm.lla_pos.lon << ", " << fdm.lla_pos.alt << endl;
-//    cout << "gzb_pos: " << gzb_position.X() << ", " << gzb_position.Y() << ", " << gzb_position.Z() << endl;
-
-//    ignition::math::Pose3d world_pose = link->WorldPose();
-//    ignition::math::Vector3d w_position = world_pose.Pos();
-//    cout << "wld_pos: " << w_position.X() << ", " << w_position.Y() << ", " << w_position.Z() << endl;
-
+    ignition::math::Pose3d setPose;
     setPose = ignition::math::Pose3d(z_fix_rot_gzb_pos, gzb_quat);
-//    setPose = ignition::math::Pose3d(gzb_position, gzb_quat);
 
     model->SetRelativePose(setPose);        // pose 3d; x,y,z, qw,qx,qy,qz
 }
@@ -761,7 +560,7 @@ void gazebo_camera_init(void)
 {
     // Do nothing...
     // Gazebo initialization should be in the main thread, not here.
-    // If it runs in a different thread, sensors::run_once will throw a silent exception );
+    // If it runs in a different thread, sensors::run_once will throw a silent exception :(
 }
 
 void gazebo_camera_periodic(void)
@@ -775,7 +574,6 @@ void gazebo_camera_periodic(void)
 #endif
         gazebo_initialized = true;
     }
-//    cout << "Periodic..." << endl;
 
     // Update the simulation for a single timestep.
     gazebo::runWorld(model->GetWorld(), 1); // 1 == iteration
