@@ -357,10 +357,10 @@ static void gazebo_write(void)
     // TODO: check multi-rotor coordinate
 
 /// ltp
-    ignition::math::Vector3d gzb_ltp_to_local = to_gazebo_position(fdm.ltpprz_pos);
-    ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(gzb_ltp_to_local);
+    ignition::math::Vector3d pos_v3d = to_gazebo_position(fdm.ltpprz_pos);
+    ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(pos_v3d);
 
-    ignition::math::Vector3d z_fix_rot_gzb_pos(NPS_GAZEBO_SCALE*rot_gzb_pos.X(),
+    ignition::math::Vector3d scaled_rot_gzb_pos(NPS_GAZEBO_SCALE*rot_gzb_pos.X(),
                                                NPS_GAZEBO_SCALE*rot_gzb_pos.Y(), NPS_GAZEBO_SCALE*rot_gzb_pos.Z());
 
 
@@ -384,7 +384,7 @@ static void gazebo_write(void)
     ignition::math::Quaterniond gzb_quat = rot_z*rot_y*fdm_quat;
 
     ignition::math::Pose3d setPose;
-    setPose = ignition::math::Pose3d(z_fix_rot_gzb_pos, gzb_quat);
+    setPose = ignition::math::Pose3d(scaled_rot_gzb_pos, gzb_quat);
 
     model->SetRelativePose(setPose);        // pose 3d; x,y,z, qw,qx,qy,qz
 }
