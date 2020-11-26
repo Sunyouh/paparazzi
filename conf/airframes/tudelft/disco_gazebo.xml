@@ -55,7 +55,7 @@
     <!-- ************************************************
                ALL TARGETS
     ************************************************  -->
-    <configure name="NPS_DEBUG_VIDEO" value="1"/>
+<!--    <configure name="NPS_DEBUG_VIDEO" value="1"/>-->
 
     <!-- Airspeed definitions  -->
     <define name="USE_AIRSPEED" value="1"/>
@@ -78,7 +78,7 @@
     <module name="actuators" type="disco"/>
 
     <!--Cameras-->
-    <module name="video_thread"/>
+<!--    <module name="video_thread"/>-->
 
 <!--    <module name="video_capture">-->
 <!--      <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>-->
@@ -90,11 +90,11 @@
 <!--      &lt;!&ndash;define name="COLORFILTER_SEND_OBSTACLE" value="TRUE"/&ndash;&gt;  &lt;!&ndash; If you want to test out the guided flightplan, uncomment this define&ndash;&gt;-->
 <!--    </module>-->
 
-    <module name="video_rtp_stream">
-      <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
-      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="4"/>
-      <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
-    </module>
+<!--    <module name="video_rtp_stream">-->
+<!--      <define name="VIEWVIDEO_CAMERA" value="front_camera"/>-->
+<!--      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="4"/>-->
+<!--      <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>-->
+<!--    </module>-->
 
     <!-- Navigation -->    
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/> <!--  required so that RTCM messages are decoded in /subsystems/gps/gps_ubx.c -->
