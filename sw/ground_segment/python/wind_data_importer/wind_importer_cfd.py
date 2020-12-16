@@ -25,7 +25,7 @@ import numpy as np
 from scipy import interpolate
 
 
-class OpenFoamImporter:
+class CFDImporter:
     def __init__(self):
         self.cfd_points = None
         self.cfd_u = None
@@ -65,7 +65,7 @@ class OpenFoamImporter:
 
     # paraview csv; P0, P1, P2, P_mag, U0, U1, U2, U_mag, eps, k, nut, p, block, p_id
     def read_csv(self, f_name):
-        csv_data = np.genfromtxt(fname=f_name, delimiter=",")
+        csv_data = np.genfromtxt(fname=f_name, delimiter=",", skip_header=5)
         # _pts = csv_data[1:, :3]
         # print("pts: ", _pts.shape)
         # _u = csv_data[1:, 4:7]
@@ -88,10 +88,11 @@ class OpenFoamImporter:
         wind_data = list(_z_nearest_arr)[0]
         """
         OpenFoam x:North y:West z:Up
+        ANSYS: ?
         return *ENU*
         """
         # East North Up
-        return (-1*wind_data[4], wind_data[3], wind_data[5])
+        return (wind_data[4], wind_data[3], wind_data[5])
 
     def find_nearest(self, arr, value, axis):
         # print(value, axis)
@@ -157,7 +158,7 @@ Z0 = interp(X, Y)
 def main():
     print("This main fn is for testing")
     fname = "/home/sunyou/tud/cfd/export_sample.csv"
-    importer = OpenFoamImporter()
+    importer = CFDImporter()
     importer.init_importer(fname)
     wind = importer.get_wind((123, -50.5, 150))
     print(wind)

@@ -25,7 +25,7 @@
 
 
 from __future__ import absolute_import, print_function, division
-from wind_importer_openfoam import OpenFoamImporter
+from wind_importer_cfd import CFDImporter
 import sys
 import signal
 import time
@@ -115,9 +115,9 @@ def main():
                              "for Paparazzi from CFD or potential flow simulation")
 
     argp.add_argument("-p", "--type", required=False, default=0, type=int,
-                        help="Specify the type; 0=OpenFOAM, 1=PotentialFlow")
+                        help="Specify the type; 0=CFD, 1=PotentialFlow")
 
-    argp.add_argument("-f", "--file", required=False, default="/home/sunyou/tud/cfd/wind_test.csv",
+    argp.add_argument("-f", "--file", required=False, default="/home/sunyou/tud/cfd/export_cfd_hill_10.csv",
                       help="OpenFOAM result file in full path")
 
     argp.add_argument("-t", "--time-step", required=False, type=int,
@@ -146,7 +146,7 @@ def main():
     # build atmosphere simulation source
     global importer
     if arguments.type == 0:
-        importer = OpenFoamImporter()
+        importer = CFDImporter()
         importer.init_importer(arguments.file)
 #     elif arguments.type == 1:
 #         importer = PotentialFlowImporter()

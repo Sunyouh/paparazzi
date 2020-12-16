@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="potential_flow_simulator" dir="potential_flow_simulator">
+  <doc>
+    <description>Potential flow simulator for orographic soaring (Never Landing Drone project)
+</description>
+  </doc>
+  <header>
+    <file name="potential_flow_simulator.h"/>
+  </header>
+  <init fun="init_potential_flow_simulator()"/>
+  <periodic fun="potential_flow_simulator_periodic()" freq="0.1" autorun="TRUE"/>
+<!--  <datalink message="GROUND_GPS" fun="parse_ground_gps(buf)"/>-->
+  <makefile>
+    <file name="potential_flow_simulator.cpp"/>
+  </makefile>
+</module>

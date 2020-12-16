@@ -175,11 +175,11 @@ inline ignition::math::Vector3d to_gazebo_position(EcefCoor_d ecef_i)
     return pos_gzb;
 }
 
-inline ignition::math::Vector3d to_gazebo_position(NedCoor_d pos_pprz_d){
+inline ignition::math::Vector3d to_gazebo_position(NedCoor_f *pos_pprz_f){
     ignition::math::Vector3d pos_gzb;
-    pos_gzb.X(pos_pprz_d.x);
-    pos_gzb.Y(pos_pprz_d.y);
-    pos_gzb.Z(pos_pprz_d.z);
+    pos_gzb.X(pos_pprz_f->x);
+    pos_gzb.Y(pos_pprz_f->y);
+    pos_gzb.Z(pos_pprz_f->z);
     return pos_gzb;
 }
 
@@ -200,9 +200,9 @@ inline ignition::math::Vector3d to_gazebo_position(LlaCoor_d pos_pprz_d)
     return pos_gzb;
 }
 
-inline ignition::math::Quaterniond to_gazebo_quat(DoubleEulers pprz_euler){
+inline ignition::math::Quaterniond to_gazebo_quat(FloatEulers *pprz_euler){
     ignition::math::Quaterniond quat_gzb;
-    quat_gzb.Euler(pprz_euler.phi, pprz_euler.theta, pprz_euler.psi);
+    quat_gzb.Euler(pprz_euler->phi, pprz_euler->theta, pprz_euler->psi);
     return quat_gzb;
 }
 
@@ -224,6 +224,8 @@ inline ignition::math::Quaterniond to_gazebo_quat(DoubleEulers pprz_euler){
  */
 static void init_gazebo(void)
 {
+//    cout << "init GZB" << endl;
+
     string gazebo_home = "/conf/simulator/gazebo/";
     string pprz_home(getenv("PAPARAZZI_HOME"));
     string gazebodir = pprz_home + gazebo_home;
@@ -241,6 +243,7 @@ static void init_gazebo(void)
         cout << "Failed to start Gazebo, exiting." << endl;
         std::exit(-1);
     }
+//    cout << "init GZB 2" << endl;
 
     cout << "Add Paparazzi paths: " << gazebodir << endl;
     gazebo::common::SystemPaths::Instance()->AddModelPaths(gazebodir + "models/");
@@ -266,6 +269,7 @@ static void init_gazebo(void)
         cout << "ERROR, could not read vehicle " + vehicle_filename << endl;
         std::exit(-1);
     }
+//    cout << "init GZB 3" << endl;
 
     // add or set up sensors before the vehicle gets loaded
 #if NPS_SIMULATE_VIDEO
@@ -310,6 +314,7 @@ static void init_gazebo(void)
         cout << "ERROR, could not read world " + world_filename << endl;
         std::exit(-1);
     }
+//    cout << "init GZB 4" << endl;
 
     // add vehicles
     world_sdf->Root()->GetFirstElement()->InsertElement(vehicle_sdf->Root()->GetFirstElement());
@@ -329,6 +334,7 @@ static void init_gazebo(void)
              << endl;
         std::exit(-1);
     }
+//    cout << "init GZB 5" << endl;
 
     // Initialize sensors
     gazebo::sensors::run_once(true);
@@ -356,8 +362,10 @@ static void gazebo_write(void)
 
     // TODO: check multi-rotor coordinate
 
-/// ltp
-    ignition::math::Vector3d pos_v3d = to_gazebo_position(fdm.ltpprz_pos);
+/// ltp == NED ...?????????????wtf and PPRZ gcs is something like enu........ it is a total mess.
+    struct NedCoor_f *_ltp_pos = stateGetPositionNed_f();
+//    VECT3_COPY(_ltp_pos, fdm.ltpprz_pos);
+    ignition::math::Vector3d pos_v3d = to_gazebo_position(_ltp_pos);
     ignition::math::Vector3d rot_gzb_pos = rot_x.RotateVector(pos_v3d);
 
     ignition::math::Vector3d scaled_rot_gzb_pos(NPS_GAZEBO_SCALE*rot_gzb_pos.X(),
@@ -380,7 +388,10 @@ static void gazebo_write(void)
 //    ignition::math::Pose3d pose = model->WorldPose(); // In LOCAL xyz frame
 //    gazebo::common::SphericalCoordinatesPtr sphere = world->SphericalCoords();
 
-    ignition::math::Quaterniond fdm_quat = to_gazebo_quat(fdm.ltp_to_body_eulers);
+    struct FloatEulers *_ltp_eulers = stateGetNedToBodyEulers_f();
+//    EULERS_COPY(_ltp_eulers, fdm.ltp_to_body_eulers);
+
+    ignition::math::Quaterniond fdm_quat = to_gazebo_quat(_ltp_eulers);
     ignition::math::Quaterniond gzb_quat = rot_z*rot_y*fdm_quat;
 
     ignition::math::Pose3d setPose;
@@ -566,6 +577,7 @@ void gazebo_camera_init(void)
 void gazebo_camera_periodic(void)
 {
   // freq = 30.0 Hz can be changed later
+//    cout << "periodic GZB" << endl;
 
   if (!gazebo_initialized) {
         init_gazebo();
@@ -575,12 +587,19 @@ void gazebo_camera_periodic(void)
         gazebo_initialized = true;
     }
 
+//    cout << "periodic GZB 2" << endl;
+
     // Update the simulation for a single timestep.
     gazebo::runWorld(model->GetWorld(), 1); // 1 == iteration
+//    cout << "runworld GZB" << endl;
+
     gazebo::sensors::run_once(); // Is this necessary? YES, indeed!
+//    cout << "sensors GZB" << endl;
 
     // Write position and attitude of the vehicle on gazebo
     gazebo_write();
+//    cout << "wirte GZB" << endl;
+
 
 #if NPS_SIMULATE_VIDEO
     gazebo_read_video();
