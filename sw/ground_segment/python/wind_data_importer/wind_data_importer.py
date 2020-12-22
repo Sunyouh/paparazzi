@@ -38,6 +38,8 @@ import numpy as np
 # Add pprz_home path
 PPRZ_HOME = os.getenv("PAPARAZZI_HOME", os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                                     '../../../..')))
+if "PAPARAZZI_HOME" not in os.environ:
+    os.environ["PAPARAZZI_HOME"] = PPRZ_HOME
 sys.path.append(PPRZ_HOME + "/var/lib/python")
 
 from pprzlink.ivy import IvyMessagesInterface
@@ -49,56 +51,62 @@ from pprzlink.message import PprzMessage
 origin = np.array([0, 0, 0])
 # scale = np.array([1., 1/M_IN_KM, 1/M_IN_KM, 1/M_IN_KM])
 
-start_time = time.time()
 
-
+# this fn takes ~0.3 ms
 def get_wind(east, north, up):
-    # t = time.time() - start_time
-    # print("east :",east)
-    # print("north :",north)
-    # print("up :",up)
     loc = np.array([east, north, up])
-    loc = loc + origin
+    # TODO: check position
+    loc = loc - origin
     # print("loc:",loc)
-    # TODO: import wind data
     weast, wnorth, wup = importer.get_wind(loc)
     # weast, wnorth, wup = np.random.rand()*3, np.random.rand()*3, np.random.rand()*2
     return weast, wnorth, wup
 
 
-def ivy_request_callback(sender, msg, resp, *args, **kwargs):
+def cfd_wind_cb(ac_id, msg):
     """
-        Ivy Callback for Paparazzi Requests
-    """
-
-    if msg.msg_class == "ground" and msg.name == "WORLD_ENV_REQ":
-        return worldenv_cb(msg, resp)
-    else:
-        return None
-
-
-def worldenv_cb(ac_id, msg):
-    """
-        Callback for paparazzi WORLD_ENV requests
+        Callback for paparazzi CFD_WIND requests
         the response should be *ENU*
     """
     # request location (in meters)
-    east, north, up = float(msg.get_field(3)),\
-        float(msg.get_field(4)),\
-        float(msg.get_field(5))
+
+    # lat, lon, alt.. & e, n, u (3,4,5)
+    east, north, up = float(msg.get_field(3)), \
+                      float(msg.get_field(4)), \
+                      float(msg.get_field(5))
     weast, wnorth, wup = get_wind(east, north, up)
-    # print("wind_est:")
-    # print(weast)
-    # print(wnorth)
-    # print(wup)
-    msg_back=PprzMessage("ground", "WORLD_ENV")
+    msg_back=PprzMessage("ground", "CFD_WIND")
     msg_back.set_value_by_name("wind_east",weast)
     msg_back.set_value_by_name("wind_north",wnorth)
     msg_back.set_value_by_name("wind_up",wup)
-    msg_back.set_value_by_name("ir_contrast",400)
-    msg_back.set_value_by_name("time_scale",1)
-    msg_back.set_value_by_name("gps_availability",1)
-    ivy.send(msg_back,None)
+    ivy.send(msg_back, None)
+
+
+# def worldenv_cb(ac_id, msg):
+#     """
+#         Callback for paparazzi WORLD_ENV requests
+#         the response should be *ENU*
+#     """
+#     # print("cb")
+#     # request location (in meters)
+#
+#     # lat, lon, alt.. & e, n, u (3,4,5)
+#     east, north, up = float(msg.get_field(3)),\
+#         float(msg.get_field(4)),\
+#         float(msg.get_field(5))
+#     weast, wnorth, wup = get_wind(east, north, up)
+#     # print("wind_est:")
+#     # print(weast)
+#     # print(wnorth)
+#     # print(wup)
+#     msg_back=PprzMessage("ground", "WORLD_ENV")
+#     msg_back.set_value_by_name("wind_east",weast)
+#     msg_back.set_value_by_name("wind_north",wnorth)
+#     msg_back.set_value_by_name("wind_up",wup)
+#     msg_back.set_value_by_name("ir_contrast",400)
+#     msg_back.set_value_by_name("time_scale",1)
+#     msg_back.set_value_by_name("gps_availability",1)
+#     ivy.send(msg_back,None)
 
 
 def signal_handler(signal, frame):
@@ -115,7 +123,7 @@ def main():
                              "for Paparazzi from CFD or potential flow simulation")
 
     argp.add_argument("-p", "--type", required=False, default=0, type=int,
-                        help="Specify the type; 0=CFD, 1=PotentialFlow")
+                        help="Specify the type; 0=CFD, 1=")
 
     argp.add_argument("-f", "--file", required=False, default="/home/sunyou/tud/cfd/export_cfd_hill_10.csv",
                       help="OpenFOAM result file in full path")
@@ -126,37 +134,49 @@ def main():
 
     argp.add_argument("-x", "--origin-x", required=False, type=float,
                       default=0.,
-                      help="Origin translation x.")
+                      help="Origin position x (EAST).")
     argp.add_argument("-y", "--origin-y", required=False, type=float,
                       default=0.,
-                      help="Origin translation y.")
+                      help="Origin position y (NORTH).")
     argp.add_argument("-z", "--origin-z", required=False, type=float,
                       default=0.,
-                      help="Origin translation z.")
-    arguments = argp.parse_args()
+                      help="Origin position z (UP).")
 
-    print(arguments)
+    # default wind speed in ENU
+    argp.add_argument("-i", "--inlet-wind-speed-east", required=False, type=float,
+                      default=0.,
+                      help="Inlet wind speed (EAST), default value is (0, 10, 0) in ENU")
+    argp.add_argument("-j", "--inlet-wind-speed-north", required=False, type=float,
+                      default=10.,
+                      help="Inlet wind speed (NORTH), default value is (0, 10, 0) in ENU")
+    argp.add_argument("-k", "--inlet-wind-speed-up", required=False, type=float,
+                      default=0.,
+                      help="Inlet wind speed (UP), default value is (0, 10, 0) in ENU")
+
+    args = argp.parse_args()
+
+    # print(arguments)
 
     # register signal handler for ctrl+c to stop the program
     signal.signal(signal.SIGINT, signal_handler)
 
     global origin
-    origin = np.array([arguments.origin_x, arguments.origin_y, arguments.origin_z])
+    origin = np.array([args.origin_x, args.origin_y, args.origin_z])
 
     # build atmosphere simulation source
     global importer
-    if arguments.type == 0:
+    if args.type == 0:
         importer = CFDImporter()
-        importer.init_importer(arguments.file)
+        importer.init_importer(args.file, args.inlet_wind_speed_east, args.inlet_wind_speed_north, args.inlet_wind_speed_up)
 #     elif arguments.type == 1:
 #         importer = PotentialFlowImporter()
     else:
         print("Please specify importer type")
 
-    # init ivy and register callback for WORLD_ENV_REQ and NPS_SPEED_POS
     global ivy
     ivy = IvyMessagesInterface("WindSimulationData")
-    ivy.subscribe(worldenv_cb,'(.* WORLD_ENV_REQ .*)')
+    # ivy.subscribe(worldenv_cb,'(.* WORLD_ENV_REQ .*)')
+    ivy.subscribe(cfd_wind_cb, '(.* CFD_WIND_REQ .*)')
 
     # wait for ivy to stop
     from ivy.std_api import IvyMainLoop  # noqa

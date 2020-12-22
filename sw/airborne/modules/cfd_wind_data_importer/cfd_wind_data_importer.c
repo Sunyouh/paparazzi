@@ -1,0 +1,224 @@
+/*
+ * Copyright (C) Sunyou Hwang <S.Hwang-1@tudelft.nl>
+ *
+ * This file is part of paparazzi
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
+/** @file "modules/world_env_req_sender/world_env_req_sender.c"
+ * @author Sunyou Hwang <S.Hwang-1@tudelft.nl>
+ * Sending IVY request to import CFD wind data periodically
+ */
+
+#include "modules/cfd_wind_data_importer/cfd_wind_data_importer.h"
+#include "nps_ivy.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+//#include <sys/types.h>
+//#include <unistd.h>
+#include <Ivy/ivy.h>
+
+#include <Ivy/ivyloop.h>
+//#include <pthread.h>
+//
+//#include "generated/airframe.h"
+//#include "math/pprz_algebra_float.h"
+//#include "math/pprz_algebra_double.h"
+//#include "nps_main.h"
+//#include "nps_autopilot.h"
+#include "nps_fdm.h"
+//#include "nps_sensors.h"
+#include "nps_atmosphere.h"
+//
+//#include "generated/settings.h"
+//#include "pprzlink/dl_protocol.h"
+//#include "subsystems/datalink/downlink.h"
+
+static MsgRcvPtr ivyPtr = NULL;
+static int seq = 1;
+
+static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
+                         void *user_data __attribute__((unused)),
+                         int argc __attribute__((unused)), char *argv[]);
+
+
+static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
+                         void *user_data __attribute__((unused)),
+                         int argc __attribute__((unused)), char *argv[])
+{
+    // wind speed in m/s
+    struct FloatVect3 wind;
+    wind.x = atof(argv[1]); //east
+    wind.y = atof(argv[2]); //north
+    wind.z = atof(argv[3]); //up
+
+    /* set wind speed in NED */
+    nps_atmosphere_set_wind_ned(wind.y, wind.x, -wind.z);
+}
+
+void nps_ivy_send_CFD_WIND_REQ(void)
+{
+    // First unbind from previous request if needed
+    if (ivyPtr != NULL) {
+        IvyUnbindMsg(ivyPtr);
+        ivyPtr = NULL;
+    }
+
+    int pid = (int)getpid();
+
+    // Bind to the reply; TODO: This looks like unnecessary. should check it
+    ivyPtr = IvyBindMsg(on_CFD_WIND, NULL, "^%d_%d (\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)", pid, seq);
+
+    // Send actual request
+    struct NpsFdm fdm_ivy;
+    memcpy(&fdm_ivy, &fdm, sizeof(struct NpsFdm));
+
+    IvySendMsg("nps %d_%d CFD_WIND_REQ %f %f %f %f %f %f",
+               pid, seq,
+               DegOfRad(fdm_ivy.lla_pos_pprz.lat),
+               DegOfRad(fdm_ivy.lla_pos_pprz.lon),
+               (fdm_ivy.hmsl),
+               (fdm_ivy.ltpprz_pos.x),
+               (fdm_ivy.ltpprz_pos.y),
+               (fdm_ivy.ltpprz_pos.z));
+    seq++;
+}
+
+
+//void* ivy_main_loop(void* data __attribute__((unused)));
+//
+//int find_launch_index(void);
+//
+//
+//void* ivy_main_loop(void* data __attribute__((unused)))
+//{
+//    IvyMainLoop();
+//
+//    return NULL;
+//}
+//
+//void nps_ivy_init(char *ivy_bus)
+//{
+//    const char *agent_name = AIRFRAME_NAME"_NPS";
+//    const char *ready_msg = AIRFRAME_NAME"_NPS Ready";
+//    IvyInit(agent_name, ready_msg, NULL, NULL, NULL, NULL);
+//
+//    // bind on a general WORLD_ENV (not a reply to request)
+//    IvyBindMsg(on_WORLD_ENV, NULL, "^(\\S*) WORLD_ENV (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+//
+//    // to be able to change datalink_enabled setting back on
+//    IvyBindMsg(on_DL_SETTING, NULL, "^(\\S*) DL_SETTING (\\S*) (\\S*) (\\S*)");
+//
+//#ifdef __APPLE__
+//    const char *default_ivy_bus = "224.255.255.255";
+//#else
+//    const char *default_ivy_bus = "127.255.255.255";
+//#endif
+//    if (ivy_bus == NULL) {
+//        IvyStart(default_ivy_bus);
+//    } else {
+//        IvyStart(ivy_bus);
+//    }
+//
+//    nps_ivy_send_world_env = false;
+//
+//    ap_launch_index = find_launch_index();
+//
+//    // Launch separate thread with IvyMainLoop()
+//    pthread_create(&th_ivy_main, NULL, ivy_main_loop, NULL);
+//
+//}
+//
+///*
+// * Parse WORLD_ENV message from gaia.
+// *
+// */
+//static void on_WORLD_ENV(IvyClientPtr app __attribute__((unused)),
+//                         void *user_data __attribute__((unused)),
+//                         int argc __attribute__((unused)), char *argv[])
+//{
+//    // wind speed in m/s
+//    struct FloatVect3 wind;
+//    wind.x = atof(argv[1]); //east
+//    wind.y = atof(argv[2]); //north
+//    wind.z = atof(argv[3]); //up
+//
+//    /* set wind speed in NED */
+//    nps_atmosphere_set_wind_ned(wind.y, wind.x, -wind.z);
+//
+//    /* not used so far */
+//    //float ir_contrast = atof(argv[4]);
+//
+//    /* set new time factor */
+//    nps_set_time_factor(atof(argv[5]));
+//
+//#if USE_GPS
+//    // directly set gps fix in subsystems/gps/gps_sim_nps.h
+//  gps_has_fix = atoi(argv[6]); // gps_availability
+//#endif
+//}
+//
+///*
+// * Send a WORLD_ENV_REQ message
+// */
+//
+//
+//void nps_ivy_send_WORLD_ENV_REQ(void)
+//{
+//    // First unbind from previous request if needed
+//    if (ivyPtr != NULL) {
+//        IvyUnbindMsg(ivyPtr);
+//        ivyPtr = NULL;
+//    }
+//
+//    int pid = (int)getpid();
+//
+//    // Bind to the reply
+//    ivyPtr = IvyBindMsg(on_WORLD_ENV, NULL, "^%d_%d (\\S*) WORLD_ENV (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", pid, seq);
+//
+//    // Send actual request
+//    struct NpsFdm fdm_ivy;
+//    memcpy(&fdm_ivy, &fdm, sizeof(struct NpsFdm));
+//
+//    IvySendMsg("nps %d_%d WORLD_ENV_REQ %f %f %f %f %f %f",
+//               pid, seq,
+//               DegOfRad(fdm_ivy.lla_pos_pprz.lat),
+//               DegOfRad(fdm_ivy.lla_pos_pprz.lon),
+//               (fdm_ivy.hmsl),
+//               (fdm_ivy.ltpprz_pos.x),
+//               (fdm_ivy.ltpprz_pos.y),
+//               (fdm_ivy.ltpprz_pos.z));
+//    seq++;
+//
+//    nps_ivy_send_world_env = false;
+//}
+
+
+
+void init_cfd_wind_data_importer(void)
+{
+  // your init code here
+    IvyBindMsg(on_CFD_WIND, NULL, "^(\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)");
+}
+
+void cfd_wind_data_importer_periodic(void)
+{
+  // your periodic code here.
+    nps_ivy_send_CFD_WIND_REQ();
+}
+
+

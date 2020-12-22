@@ -8,7 +8,7 @@
     <file name="potential_flow_simulator.h"/>
   </header>
   <init fun="init_potential_flow_simulator()"/>
-  <periodic fun="potential_flow_simulator_periodic()" freq="0.1" autorun="TRUE"/>
+  <periodic fun="potential_flow_simulator_periodic()" freq="1" autorun="TRUE"/>
 <!--  <datalink message="GROUND_GPS" fun="parse_ground_gps(buf)"/>-->
   <makefile>
     <file name="potential_flow_simulator.cpp"/>

@@ -37,7 +37,8 @@ extern "C" {
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
 #include "math/pprz_geodetic_double.h"
-//#include "subsystems/datalink/telemetry.h"
+#include "subsystems/datalink/telemetry.h"
+#include "nps_atmosphere.h"
 }
 
 using namespace std;
@@ -76,6 +77,10 @@ using namespace std;
 #ifndef PF_USE_GROUND_GPS
 #define PF_USE_GROUND_GPS FALSE
 #endif
+// set wind to nps environment?
+#ifndef PF_SET_WIND_NPS_ENV
+#define PF_SET_WIND_NPS_ENV FALSE
+#endif
 
 // other constants
 #define HEADING_QUEUE_SIZE 10
@@ -83,7 +88,6 @@ using namespace std;
 static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
 struct UtmCoor_d ground_utm, ground_utm_old;
 float ground_heading;
-
 
 //struct FloatVect3 calc_relative_position(struct UtmCoor_f *utm_vehicle, struct UtmCoor_f *utm_ground);
 //struct LlaCoor_d *to_lla_d(struct LlaCoor_f *_lla_f);
@@ -260,18 +264,25 @@ struct FloatVect3 compute_potential_flow(struct FloatVect3 rel_dist_v3f, float r
     float u_r = (1 - ((R_ridge*R_ridge)/(r*r))) * ref_wind_speed * cos(theta);
     float u_th = -(1 + ((R_ridge*R_ridge)/(r*r))) * ref_wind_speed * sin(theta);
 
+//    cout << theta << ", " << u_r << ", " << u_th << endl;
+
     float z_circle = -0.01;
     if (R_ridge*R_ridge - _y*_y > 0){       // what is this for?
         z_circle = -1*sqrt(R_ridge*R_ridge - _y*_y);
     }
 
+//    cout << "; " << (_z - z_circle) << "< " << PF_SURFACE_ROUGHNESS << "< " << endl;
     // 2d potential flow, so there is no x component (x:east)
     float mult_factor = (logf(-(_z - z_circle) / PF_SURFACE_ROUGHNESS)) / (logf(-(-70 - z_circle) / PF_SURFACE_ROUGHNESS));
+
+//    cout << z_circle << ", " << mult_factor << endl;
+    mult_factor = 1.0;  //TODO: temp
 
     struct FloatVect3 _wind_vel;
     _wind_vel.x = 0;
     _wind_vel.y = (cosf(theta) * u_r) - (sinf(theta) * u_th*mult_factor);
-    _wind_vel.z = (sinf(theta) * u_r) + (cosf(theta) * u_th*mult_factor);
+    _wind_vel.z = (sinf(theta) * u_r) + (cosf(theta) * u_th)*mult_factor;
+    // TODO: check mult_factor. what is it for?
 
     return _wind_vel;
 }
@@ -307,7 +318,6 @@ void potential_flow_simulator_periodic(void)
     /// retrieve vehicle position & convert it to utm_ds
     // why lla->utm??: for accuracy. but IDK whether I really need it..
     struct LlaCoor_f *vehicle_position_lla_f = stateGetPositionLla_f();
-//    cout << "geposition PF" << endl;
 //    cout << vehicle_position_lla_f->lon << ", " << vehicle_position_lla_f->lat << endl;
 
 
@@ -330,19 +340,33 @@ void potential_flow_simulator_periodic(void)
 //  if (PF_USE_GROUND_GPS) { // no need to calc again..
 //      ground_heading = get_ground_heading();
 //  }
+//    cout << "heading: " << vehicle_heading << endl;
 
     /// then I have ground station position and vehicle position both in UTM
     /// AND IN OBSTACLE's body frame!!! !!! !!!
     struct FloatVect3 vehicle_position_in_ground_body_frame =
             rotate_frame(&vehicle_position_v3, ground_heading-vehicle_heading);
 
+//    cout << vehicle_position_in_ground_body_frame.x << ", " << vehicle_position_in_ground_body_frame.y << ", "
+//    << vehicle_position_in_ground_body_frame.z << endl;
+
     struct FloatVect3 ground_position_v3_enu = utm_to_v3(&ground_utm);
+
+//    cout << ground_position_v3_enu.x << ", " << ground_position_v3_enu.y << ", " << ground_position_v3_enu.z << endl;
+
     struct FloatVect3 ground_position_v3 = rotate_frame(&ground_position_v3_enu, ground_heading);
 
+//    cout << ground_position_v3.x << ", " << ground_position_v3.y << ", " << ground_position_v3.z << endl;
+
     /// calculate relative distance.. we assume that ground gps position is the obstacle position.
+    // TODO: if not using ground gps, this does not make much sense.. bc ground position is in local, not utm.
+    // TODO: so, set gp in utm, or add some conditions..
     struct FloatVect3 dist_from_obstacle_to_vehicle =
             calc_relative_position_v3(&vehicle_position_in_ground_body_frame, &ground_position_v3);
 //    cout << "periodic PF 3" << endl;
+
+//    cout << dist_from_obstacle_to_vehicle.x << ", " << dist_from_obstacle_to_vehicle.y << ", " << dist_from_obstacle_to_vehicle.z << endl;
+
 
     /// WIND. IN. NED.
 //    float state_wind_x = stateGetHorizontalWindspeed_f()->x; // north
@@ -357,17 +381,27 @@ void potential_flow_simulator_periodic(void)
     /// potential flow calculation: obstacle's body frame; wind velocity (x, z) and reference wind vel (x dir)
     struct FloatVect3 wind_vel_v3f = compute_potential_flow(dist_from_obstacle_to_vehicle, PF_REF_WIND_VEL);
 
+//    cout << wind_vel_v3f.x << ", " << wind_vel_v3f.y << ", " << wind_vel_v3f.z << endl;
+
     struct FloatVect3 wind_in_ned = rotate_frame(&wind_vel_v3f, -ground_heading);
 //    cout << "periodic PF 4" << endl;
 
-    /// but that does not work for other things e.g. hill and building?
-    /// Should it be a user input kinda thing? in case of the ship it should be a GPS...
-    /// hills and buildings then it could be gps, but we still need to specify where exactly the ground station is..no?
-    /// and should specify the size of obstacle... so...
-    /// can we put the ground gps at the hill or building? or should we put that at the "actual" ground station?
-    /// well... we cannot really put it at the top mount of the boat though.
-    /// so I guess it should be.. somehow.. user can define where the obstacle "relatively" is.
+    struct FloatVect2 hor_wind;
+    hor_wind.x = wind_in_ned.x;
+    hor_wind.y = wind_in_ned.y;
 
+    float ver_wind = wind_in_ned.z;
+
+//    cout << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
+
+    // Set wind speed (state)
+    stateSetHorizontalWindspeed_f(&hor_wind);
+    stateSetVerticalWindspeed_f(ver_wind);
+
+    // set wind speed as environment
+    if (PF_SET_WIND_NPS_ENV){
+        nps_atmosphere_set_wind_ned((double)wind_in_ned.x, (double)wind_in_ned.y, (double)wind_in_ned.z);
+    }
 }
 
 

@@ -22,7 +22,8 @@
 """
 
 import numpy as np
-from scipy import interpolate
+import time
+# from scipy import interpolate
 
 
 class CFDImporter:
@@ -35,17 +36,19 @@ class CFDImporter:
         self.translate_origin = (0, 0, 0)
         self.wind_data = None
         self.count = 0
+        self.x_min, self.x_max, self.y_min, self.y_max, self.z_min, self.z_max = 0, 0, 0, 0, 0, 0
+        self.inlet_wind_speed_enu = (0, 0, 0)
 
-    def init_importer(self, f_name, method="nearest"):
+    def init_importer(self, f_name, w_e, w_n, w_u):
         print("init importer")
         self.read_csv(f_name)
-
-        # self.linear_interpolator = interpolate.RegularGridInterpolator(self.cfd_points, self.cfd_u, "linear")
-        # x_arr = (self.cfd_u[0], self.cfd_u[0], self.cfd_u[0])
-        # x_arr_2 = np.array(zip(x_arr))
-        # self.interpolator_x = interpolate.RegularGridInterpolator(self.cfd_points, x_arr, method=method)
-        # self.interpolator_y = interpolate.RegularGridInterpolator(self.cfd_points, self.cfd_u[1], method=method)
-        # self.interpolator_z = interpolate.RegularGridInterpolator(self.cfd_points, self.cfd_u[2], method=method)
+        self.x_min = np.min(self.wind_data[:, 0])
+        self.x_max = np.max(self.wind_data[:, 0])
+        self.y_min = np.min(self.wind_data[:, 1])
+        self.y_max = np.max(self.wind_data[:, 1])
+        self.z_min = np.min(self.wind_data[:, 2])
+        self.z_max = np.max(self.wind_data[:, 2])
+        self.inlet_wind_speed_enu = (w_e, w_n, w_u)
 
     def translate_field(self, x=0, y=0, z=0):
         # self.cfd_points[0, :] += x
@@ -63,25 +66,16 @@ class CFDImporter:
     #     wind_z = self.interpolator_z(loc)
     #     return wind_x, wind_y, wind_z
 
-    # paraview csv; P0, P1, P2, P_mag, U0, U1, U2, U_mag, eps, k, nut, p, block, p_id
     def read_csv(self, f_name):
         csv_data = np.genfromtxt(fname=f_name, delimiter=",", skip_header=5)
-        # _pts = csv_data[1:, :3]
-        # print("pts: ", _pts.shape)
-        # _u = csv_data[1:, 4:7]
-        # print("u: ", _u.shape)
         self.wind_data = np.concatenate((csv_data[1:, :3], csv_data[1:, 4:7]), axis=1)
-        # print(self.wind_data.shape)
-        # self.cfd_points = (_pts[:, 0], _pts[:, 1], _pts[:, 2])
-        # self.cfd_u = (_u[:, 0], _u[:, 1], _u[:, 2])
-        # print(len(self.cfd_points))
-        # print(len(self.cfd_u))
 
     def get_wind(self, loc):
-        # loc: (east, north, up) == (y, x, z)
-        # self.count += 1
-        # print(self.count)
-        # print("get_wind ", self.wind_data.shape)
+        # loc: (east, north, up) -> (y, x, z) in NED
+
+        if not (self.x_min < loc[1] < self.x_max and self.y_min < loc[0] < self.y_max and self.z_min < loc[2] < self.z_max):
+            return self.inlet_wind_speed_enu
+
         _x_nearest_arr = self.find_nearest(self.wind_data, loc[1], 0)
         _y_nearest_arr = self.find_nearest(_x_nearest_arr, loc[0], 1)
         _z_nearest_arr = self.find_nearest(_y_nearest_arr, loc[2], 2)
@@ -103,43 +97,6 @@ class CFDImporter:
         return np.array(arr[idx, :])[0]
 
 
-    # def get_points(self, points, var, method='nearest'):
-    #     """ Get value of variable on points
-    #
-    #     Arguments:
-    #     points: a ndarray containing the point coordinates on the last
-    #     dimension
-    #     var: the name of the variable in the mesoNH file(s)
-    #     method: 'nearest' and 'linear' interpolation are currently supported
-    #     """
-    #     points = np.array(points)
-    #     p = self._apply_bounds(points)
-    #     caxes = tuple(range(p.ndim - 1))
-    #     bounds = zip(p.min(axis=caxes), p.max(axis=caxes))
-    #     interpolator = self._get_interpolator(bounds, var, method)
-    #     return interpolator(p, method).squeeze()
-    #
-    # def _get_interpolator(self, bounds, var, method="nearest"):
-    #     slice_indexes, coordinates = self._slicyfy(bounds)
-    #     values = self._get_var_values(var, slice_indexes)
-    #     ip = RegularGridInterpolator(coordinates, values, method)
-    #     return ip
-    #
-    # def _slicyfy(self, bounds):
-    #     slice_indexes = ()
-    #     coordinates = ()
-    #     for d, b in enumerate(bounds):
-    #         dslice = slice(find_le(self.grid_coordinates[d], b[0]),
-    #                        find_gt(self.grid_coordinates[d], b[1]) + 1)
-    #         slice_indexes += dslice,
-    #         coordinates += self.grid_coordinates[d][dslice],
-    #
-    #     return slice_indexes, coordinates
-    #
-    # def _get_var_values(self, var, idx=Ellipsis):
-    #     return self.data[var][idx]
-
-
 """
 # Create coordinate pairs
 cartcoord = list(zip(x, y))
@@ -156,12 +113,21 @@ Z0 = interp(X, Y)
 
 
 def main():
-    print("This main fn is for testing")
+    print("This main fn is only for a test")
     fname = "/home/sunyou/tud/cfd/export_sample.csv"
     importer = CFDImporter()
     importer.init_importer(fname)
-    wind = importer.get_wind((123, -50.5, 150))
-    print(wind)
+    sum_t = 0
+
+    for i in range(500):
+        _t1 = time.time()
+        # wind = importer.get_wind((123, -50.5, 150))
+        wind = importer.get_wind((np.random.randint(0, 300), np.random.randint(-50, 50), np.random.randint(0, 300)))
+        _t2 = time.time()
+        sum_t += (_t2 - _t1)*1000
+
+    print(sum_t / 500)
+    # print(wind)
 
 
 if __name__ == '__main__':

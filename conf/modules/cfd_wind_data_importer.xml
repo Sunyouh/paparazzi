@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="cfd_wind_data_importer" dir="cfd_wind_data_importer">
+  <doc>
+    <description>
+      Sending IVY request to import CFD wind data
+    </description>
+  </doc>
+  <header>
+    <file name="cfd_wind_data_importer.h"/>
+  </header>
+  <init fun="init_cfd_wind_data_importer()"/>
+  <periodic fun="cfd_wind_data_importer_periodic()" freq="1.0" autorun="TRUE"/>
+  <makefile>
+    <file name="cfd_wind_data_importer.c"/>
+  </makefile>
+</module>
