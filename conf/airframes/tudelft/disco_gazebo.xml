@@ -51,13 +51,18 @@
         <!--        <define name="NPS_DEBUG_VIDEO" value="1"/>-->
 <!--        <define name="NPS_SIMULATE_VIDEO" value="1"/>-->
       </module>
-<!--      <define name="NPS_DEBUG_VIDEO" value="1"/>-->
+      <module name="potential_flow_simulator"/>
+
+      <!--      <define name="NPS_DEBUG_VIDEO" value="1"/>-->
     </target>
     
     <!-- ************************************************
                ALL TARGETS
     ************************************************  -->
 <!--    <configure name="NPS_DEBUG_VIDEO" value="1"/>-->
+
+    <define name="WIND_INFO"/>
+    <define name="WIND_INFO_RET"/>
 
     <!-- Airspeed definitions  -->
     <define name="USE_AIRSPEED" value="1"/>

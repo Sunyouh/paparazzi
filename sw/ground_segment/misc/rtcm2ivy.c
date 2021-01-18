@@ -57,6 +57,7 @@ rtcm3_msg_callbacks_node_t rtcm3_4072_node;
 rtcm3_msg_callbacks_node_t rtcm3_1230_node;
 
 rtcm3_msg_callbacks_node_t ubx_nav_svin_node;
+rtcm3_msg_callbacks_node_t ubx_nav_posllh_node;
 
 /** Default values **/
 uint8_t ac_id         = 0;
@@ -252,6 +253,39 @@ static void ubx_navsvin_callback(uint8_t len, uint8_t msg[])
     printf("iTow: %u \t dur: %u \t meaAcc: %f \t valid: %u \t active: %u \n", iTow, dur, meanAcc, valid, active);
   }
 }
+
+/* Callback for UBX NAV POSLLH message
+ */
+static void ubx_navposllh_callback(uint8_t len, uint8_t msg[])
+{
+	  if (len > 0) {
+	    u32 iTow  = UBX_NAV_SVIN_ITOW(msg);
+	    float meanX = UBX_NAV_POSLLH_meanX(msg);
+	    float meanY = UBX_NAV_POSLLH_meanY(msg);
+	    float meanZ = UBX_NAV_POSLLH_meanZ(msg);
+            printf("Sending message with timestamp %d\n", iTow);
+	    // Send data used for displaying the position in GCS
+	    IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f",
+			   "ground",
+			   "FLIGHT_PARAM",
+			   "GCS",
+	    	   0.0, // roll,
+			   0.0, // pitch,
+			   0.0, // heading
+			   meanY*pow(10,-7),
+			   meanX*pow(10,-7),
+			   meanZ*pow(10,-3),
+			   0.0, // course
+			   0.0,
+			   0.0,
+			   0.0, // agl
+			   (float)(iTow),
+			   0,
+			   0.0); // airspeed
+
+        IvySendMsg("%s GROUND_GPS %s %d %d %d %d", "0", ac_id, (int)(meanY), (int)(meanX), (int)(meanZ), iTow);
+	  }
+}
 /**
  * Parse the tty data when bytes are available
  */
@@ -365,7 +399,7 @@ int main(int argc, char **argv)
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1077, &rtcm3_1077_callback, &rtcm3_1077_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1087, &rtcm3_1087_callback, &rtcm3_1087_node);
   rtcm3_register_callback(&msg_state, UBX_NAV_SVIN, &ubx_navsvin_callback, &ubx_nav_svin_node);
-
+  rtcm3_register_callback(&msg_state, UBX_NAV_POSLLH, &ubx_navposllh_callback, &ubx_nav_posllh_node);
 
   // Add IO watch for tty connection
   printf_debug("Adding IO watch...\n");

@@ -24,15 +24,18 @@
  */
 
 #include "modules/cfd_wind_data_importer/cfd_wind_data_importer.h"
-#include "nps_ivy.h"
+//#include "nps_ivy.h"
 
+#include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
 //#include <sys/types.h>
 //#include <unistd.h>
-#include <Ivy/ivy.h>
 
-#include <Ivy/ivyloop.h>
+//#include <Ivy/ivy.h>
+//#include <Ivy/ivyglibloop.h>
+//#include <Ivy/ivyloop.h>
+
 //#include <pthread.h>
 //
 //#include "generated/airframe.h"
@@ -43,59 +46,106 @@
 #include "nps_fdm.h"
 //#include "nps_sensors.h"
 #include "nps_atmosphere.h"
-//
+
+//#include "generated/modules.h"
 //#include "generated/settings.h"
 //#include "pprzlink/dl_protocol.h"
-//#include "subsystems/datalink/downlink.h"
+#include "subsystems/datalink/downlink.h"
+#include "subsystems/datalink/telemetry.h"
+//#include "subsystems/abi.h"
 
-static MsgRcvPtr ivyPtr = NULL;
-static int seq = 1;
+//static MsgRcvPtr ivyPtr = NULL;
+//static int seq = 1;
+//static int init_ivy = 1;
 
-static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
-                         void *user_data __attribute__((unused)),
-                         int argc __attribute__((unused)), char *argv[]);
+//static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
+//                         void *user_data __attribute__((unused)),
+//                         int argc __attribute__((unused)), char *argv[]);
+//
+//
+//static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
+//                         void *user_data __attribute__((unused)),
+//                         int argc __attribute__((unused)), char *argv[])
+//{
+//    // wind speed in m/s
+//    struct FloatVect3 wind;
+//    wind.x = atof(argv[1]); //east
+//    wind.y = atof(argv[2]); //north
+//    wind.z = atof(argv[3]); //up
+//
+//    /* set wind speed in NED */
+//    nps_atmosphere_set_wind_ned(wind.y, wind.x, -wind.z);
+//}
 
+static void cfd_wind_importer_send_position(void)
+{
+    struct NpsFdm fdm_ivy;
+    memcpy(&fdm_ivy, &fdm, sizeof(struct NpsFdm));
+    float _pos_x = fdm_ivy.ltpprz_pos.x;
+    float _pos_y = fdm_ivy.ltpprz_pos.y;
+    float _pos_z = fdm_ivy.ltpprz_pos.z;
+    uint8_t ac_id = AC_ID;
+//    printf("%f %f %f\n", _pos_x, _pos_y, _pos_z);
+    DOWNLINK_SEND_LTP_POSITION(DefaultChannel, DefaultDevice, &ac_id,
+                               &_pos_x, &_pos_y, &_pos_z);
+//    pprz_msg_send_LTP_POSITION(DefaultChannel, DefaultDevice, AC_ID,
+//                               (&fdm_ivy.ltpprz_pos.x),
+//                               (&fdm_ivy.ltpprz_pos.y),
+//                               (&fdm_ivy.ltpprz_pos.z));
+}
 
-static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
-                         void *user_data __attribute__((unused)),
-                         int argc __attribute__((unused)), char *argv[])
+// Variables that are send through IVY
+//static void send_ltp_position(struct transport_tx *trans, struct link_device *dev){
+//    struct NpsFdm fdm_ivy;
+//    memcpy(&fdm_ivy, &fdm, sizeof(struct NpsFdm));
+//    pprz_msg_send_LTP_POSITION(trans, dev, AC_ID,
+//                               &fdm_ivy.ltpprz_pos.x,
+//                               &fdm_ivy.ltpprz_pos.y,
+//                               &fdm_ivy.ltpprz_pos.z);
+//}
+
+//static void ivy_send_CFD_WIND_REQ(void)
+//{
+//    // First unbind from previous request if needed
+////    if (ivyPtr != NULL) {
+////        IvyUnbindMsg(ivyPtr);
+////        ivyPtr = NULL;
+////    }
+//
+//    int pid = (int)getpid();
+//
+//    // Bind to the reply; TODO: This looks like unnecessary. should check it
+////    ivyPtr = IvyBindMsg(on_CFD_WIND, NULL, "^%d_%d (\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)", pid, seq);
+//
+//    // Send actual request
+//    struct NpsFdm fdm_ivy;
+//    memcpy(&fdm_ivy, &fdm, sizeof(struct NpsFdm));
+//
+//    IvySendMsg("CFD %d_%d CFD_WIND_REQ %f %f %f %f %f %f",
+//               pid, seq,
+//               DegOfRad(fdm_ivy.lla_pos_pprz.lat),
+//               DegOfRad(fdm_ivy.lla_pos_pprz.lon),
+//               (fdm_ivy.hmsl),
+//               (fdm_ivy.ltpprz_pos.x),
+//               (fdm_ivy.ltpprz_pos.y),
+//               (fdm_ivy.ltpprz_pos.z));
+//    seq++;
+//
+////    return TRUE;
+//}
+
+void cfd_wind_importer_parse_wind_msg(uint8_t *buf)
 {
     // wind speed in m/s
     struct FloatVect3 wind;
-    wind.x = atof(argv[1]); //east
-    wind.y = atof(argv[2]); //north
-    wind.z = atof(argv[3]); //up
+    wind.x = DL_CFD_WIND_DATA_wind_east(buf); //east
+    wind.y = DL_CFD_WIND_DATA_wind_north(buf); //north
+    wind.z = DL_CFD_WIND_DATA_wind_up(buf); //up
+
+//    printf("%f %f %f\n", wind.x, wind.y, wind.z);
 
     /* set wind speed in NED */
     nps_atmosphere_set_wind_ned(wind.y, wind.x, -wind.z);
-}
-
-void nps_ivy_send_CFD_WIND_REQ(void)
-{
-    // First unbind from previous request if needed
-    if (ivyPtr != NULL) {
-        IvyUnbindMsg(ivyPtr);
-        ivyPtr = NULL;
-    }
-
-    int pid = (int)getpid();
-
-    // Bind to the reply; TODO: This looks like unnecessary. should check it
-    ivyPtr = IvyBindMsg(on_CFD_WIND, NULL, "^%d_%d (\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)", pid, seq);
-
-    // Send actual request
-    struct NpsFdm fdm_ivy;
-    memcpy(&fdm_ivy, &fdm, sizeof(struct NpsFdm));
-
-    IvySendMsg("nps %d_%d CFD_WIND_REQ %f %f %f %f %f %f",
-               pid, seq,
-               DegOfRad(fdm_ivy.lla_pos_pprz.lat),
-               DegOfRad(fdm_ivy.lla_pos_pprz.lon),
-               (fdm_ivy.hmsl),
-               (fdm_ivy.ltpprz_pos.x),
-               (fdm_ivy.ltpprz_pos.y),
-               (fdm_ivy.ltpprz_pos.z));
-    seq++;
 }
 
 
@@ -208,17 +258,47 @@ void nps_ivy_send_CFD_WIND_REQ(void)
 //}
 
 
+//static void init_ivy_cfd_wind_data_importer(void) {
+//
+//    IvyInit ("CFD_WIND_DATA_IMPORTER", "CFD_WIND_DATA_IMPORTER READY", NULL, NULL, NULL, NULL);
+//    IvyStart("127.255.255.255");
+//    IvyBindMsg(on_CFD_WIND, NULL, "^(\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)");
+//    init_ivy = 0;
+//}
+
+
+
+//gboolean cfd_wind_timeout_cb(gpointer data){
+//    return TRUE;
+//}
+
+//void init_cfd_wind_data_importer_ivy(void) {
+//    GMainLoop *ml = g_main_loop_new(NULL, FALSE);
+//
+//    IvyInit("CFD_WIND_IMPORTER", "CFD_WIND_IMPORTER READY", NULL, NULL, NULL, NULL);
+//    IvyStart("127.255.255.255");
+//
+//    g_timeout_add(100, ivy_send_CFD_WIND_REQ, NULL);
+//
+//    IvyBindMsg(on_CFD_WIND, NULL, "^(\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)");
+//
+//    g_main_loop_run(ml);
+//}
 
 void init_cfd_wind_data_importer(void)
 {
   // your init code here
-    IvyBindMsg(on_CFD_WIND, NULL, "^(\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)");
+//    IvyBindMsg(on_CFD_WIND, NULL, "^(\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)");
+//    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LTP_POSITION, send_ltp_position);
 }
 
 void cfd_wind_data_importer_periodic(void)
 {
+//    if (init_ivy){
+//        init_ivy_cfd_wind_data_importer();
+//    }
   // your periodic code here.
-    nps_ivy_send_CFD_WIND_REQ();
+//    ivy_send_CFD_WIND_REQ();
+    cfd_wind_importer_send_position();
 }
-
 

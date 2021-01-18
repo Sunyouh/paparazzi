@@ -38,6 +38,7 @@ class CFDImporter:
         self.count = 0
         self.x_min, self.x_max, self.y_min, self.y_max, self.z_min, self.z_max = 0, 0, 0, 0, 0, 0
         self.inlet_wind_speed_enu = (0, 0, 0)
+        self.inlet_wind_speed_sum = 0
 
     def init_importer(self, f_name, w_e, w_n, w_u):
         print("init importer")
@@ -49,6 +50,8 @@ class CFDImporter:
         self.z_min = np.min(self.wind_data[:, 2])
         self.z_max = np.max(self.wind_data[:, 2])
         self.inlet_wind_speed_enu = (w_e, w_n, w_u)
+        self.inlet_wind_speed_sum = abs(w_e)+abs(w_n)+abs(w_u)
+        print("x: ", self.x_min, self.x_max, ", y: ", self.y_min, self.y_max, ", z: ", self.z_min, self.z_max)
 
     def translate_field(self, x=0, y=0, z=0):
         # self.cfd_points[0, :] += x
@@ -77,15 +80,17 @@ class CFDImporter:
             return self.inlet_wind_speed_enu
 
         _x_nearest_arr = self.find_nearest(self.wind_data, loc[1], 0)
-        _y_nearest_arr = self.find_nearest(_x_nearest_arr, loc[0], 1)
-        _z_nearest_arr = self.find_nearest(_y_nearest_arr, loc[2], 2)
-        wind_data = list(_z_nearest_arr)[0]
+        _z_nearest_arr = self.find_nearest(_x_nearest_arr, loc[2], 2)
+        _y_nearest_arr = self.find_nearest(_z_nearest_arr, loc[0], 1)
+        wind_data = list(_y_nearest_arr)[0]
         """
         OpenFoam x:North y:West z:Up
-        ANSYS: ?
+        ANSYS: ? TODO: check ANSYS frame
         return *ENU*
         """
-        # East North Up
+        if (abs(wind_data[3])+abs(wind_data[4])+abs(wind_data[5])) < self.inlet_wind_speed_sum:
+            return (0, 0, 0)
+        # East North Up TODO: is this enu????
         return (wind_data[4], wind_data[3], wind_data[5])
 
     def find_nearest(self, arr, value, axis):

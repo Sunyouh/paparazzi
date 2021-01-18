@@ -1,11 +1,8 @@
 <!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
 
-<flight_plan alt="260" ground_alt="185" lat0="43.46223" lon0="1.27289" max_dist_from_home="1500" name="Basic" security_height="25">
+<flight_plan alt="50" ground_alt="0" qfu="0" lat0="43.46223" lon0="1.27289" max_dist_from_home="1500" name="Basic" security_height="25">
   <header>
 #include "subsystems/datalink/datalink.h"
-#include "modules/digital_cam/dc.h"
-#define LINE_START_FUNCTION dc_Survey(40);
-#define LINE_STOP_FUNCTION dc_autoshoot = DC_AUTOSHOOT_STOP;
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -33,20 +30,6 @@
       <corner name="S5"/>
     </sector>
   </sectors>
-  <modules>
-    <!-- extra navigation routines -->
-    <module name="nav" type="bungee_takeoff"/>
-    <module name="nav" type="line"/>
-    <module name="nav" type="line_border"/>
-    <module name="nav" type="line_osam"/>
-    <module name="nav" type="flower"/>
-    <module name="nav" type="smooth"/>
-    <module name="nav" type="survey_polygon"/>
-    <module name="nav" type="survey_poly_osam"/>
-    <module name="nav" type="survey_zamboni"/>
-    <module name="nav" type="vertical_raster"/>
-    <module name="nav" type="spiral"/>
-  </modules>
   <exceptions/>
   <blocks>
     <block name="Wait GPS">
@@ -80,62 +63,6 @@
       <call_once fun="NavSetWaypointHere(WP_MOB)"/>
       <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
       <circle radius="nav_radius" wp="MOB"/>
-    </block>
-    <block group="extra_pattern" name="Line 1-2" strip_button="Line (wp 1-2)" strip_icon="line.png">
-      <call_once fun="nav_line_setup()"/>
-      <call fun="nav_line_run(WP_1, WP_2, nav_radius)"/>
-    </block>
-    <block group="extra_pattern" name="Survey S1-S3" strip_button="Survey (wp S1-S3)" strip_icon="survey.png">
-      <survey_rectangle grid="150" wp1="S1" wp2="S3"/>
-    </block>
-    <block name="Bungee take-off">
-      <call_once fun="nav_bungee_takeoff_setup(WP_HOME)"/>
-      <call fun="nav_bungee_takeoff_run()"/>
-    </block>
-    <block group="nav_pattern" name="Poly Survey" strip_button="Poly Survey">
-      <call_once fun="nav_survey_polygon_setup(WP_S1,5,80,30,10,50,GetAltRef()+60)"/>
-      <call fun="nav_survey_polygon_run()"/>
-    </block>
-    <block group="nav_pattern" name="Border line 1-2" strip_button="Border Line">
-      <call_once fun="nav_line_border_setup()"/>
-      <call fun="nav_line_border_run(WP_1, WP_2, nav_radius)"/>
-    </block>
-    <block group="nav_pattern" name="Smooth nav (wp 1-2)" strip_button="Smooth nav">
-      <set value="gps.tow / 1000. + 60." var="snav_desired_tow"/>
-      <call_once fun="snav_init(WP_1, M_PI_2-atan2(WaypointY(WP_2)-WaypointY(WP_1),WaypointX(WP_2)-WaypointX(WP_1)), DEFAULT_CIRCLE_RADIUS/2.)"/>
-      <call fun="snav_circle1()"/>
-      <call fun="snav_route()"/>
-      <call fun="snav_circle2()"/>
-      <call fun="snav_on_time(DEFAULT_CIRCLE_RADIUS)"/>
-      <go from="1" hmode="route" wp="2"/>
-      <deroute block="Standby"/>
-    </block>
-    <block group="nav_pattern" name="Flower (wp 1-2)" strip_button="Flower">
-      <call_once fun="nav_flower_setup(WP_1, WP_2)"/>
-      <call fun="nav_flower_run()"/>
-    </block>
-    <block name="Poly survey osam">
-      <call_once fun="nav_survey_poly_osam_setup(WP_S1, 5, 100, -5)"/>
-      <call fun="nav_survey_poly_osam_run()"/>
-    </block>
-    <block name="Poly survey osam dynamic">
-      <call_once fun="nav_survey_poly_osam_setup_towards(WP_S1, 0, 0, WP_S1_angle)"/>
-      <call fun="nav_survey_poly_osam_run()"/>
-    </block>
-    <block name="ZamboniSurvey">
-      <call_once fun="nav_survey_zamboni_setup(WP_1, WP_2, 200, 40, 7, 290)"/>
-      <call fun="nav_survey_zamboni_run()"/>
-    </block>
-    <block name="Flight Line block">
-      <call fun="nav_line_osam_block_run(WP_S1, WP_S5, nav_radius, 30, 10)"/>
-    </block>
-    <block name="Vertical Raster">
-      <call_once fun="nav_vertical_raster_setup()"/>
-      <call fun="nav_vertical_raster_run(WP_S1, WP_S2, nav_radius, 50)"/>
-    </block>
-    <block name="Spiral">
-      <call_once fun="nav_spiral_setup(WP_S1, WP_S2, 30, 10, 3)"/>
-      <call fun="nav_spiral_run()"/>
     </block>
     <block group="land" name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png">
       <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>

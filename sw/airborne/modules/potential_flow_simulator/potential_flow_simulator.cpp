@@ -39,6 +39,7 @@ extern "C" {
 #include "math/pprz_geodetic_double.h"
 #include "subsystems/datalink/telemetry.h"
 #include "nps_atmosphere.h"
+#include "modules/ctrl/follow_me.h"
 }
 
 using namespace std;
@@ -71,7 +72,7 @@ using namespace std;
 #endif
 // reference wind velocity: x dir in the obstacle's body frame
 #ifndef PF_REF_WIND_VEL
-#define PF_REF_WIND_VEL 10
+#define PF_REF_WIND_VEL 4
 #endif
 // whether use ground gps or not
 #ifndef PF_USE_GROUND_GPS
@@ -82,21 +83,28 @@ using namespace std;
 #define PF_SET_WIND_NPS_ENV FALSE
 #endif
 
+#ifndef PF_DEFAULT_HEADING
+#define PF_DEFAULT_HEADING 0
+#endif
+
 // other constants
 #define HEADING_QUEUE_SIZE 10
 
-static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
-struct UtmCoor_d ground_utm, ground_utm_old;
-float ground_heading;
+//static struct LlaCoor_d ground_lla; // lla coordinates received by the GPS message
+//struct UtmCoor_d pf_ground_utm, pf_ground_utm_old;
+//float ground_heading;
+//static uint32_t ground_timestamp;
+//static uint32_t old_ground_timestamp;
+//static uint8_t _stationary_ground = 0;
 
 //struct FloatVect3 calc_relative_position(struct UtmCoor_f *utm_vehicle, struct UtmCoor_f *utm_ground);
 //struct LlaCoor_d *to_lla_d(struct LlaCoor_f *_lla_f);
 //struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta);
-#if PF_USE_GROUND_GPS
-void parse_ground_gps(uint8_t *buf);
-void follow_me_set_heading(void);
-float average_heading(float diffx, float diffy);
-#endif
+//#if PF_USE_GROUND_GPS
+//void parse_ground_gps(uint8_t *buf);
+//void follow_me_set_heading(void);
+//float average_heading(float diffx, float diffy);
+//#endif
 struct FloatVect3 compute_potential_flow(struct FloatVect3 rel_dist_v3f, float ref_wind_speed);
 
 
@@ -145,110 +153,117 @@ inline struct FloatVect3 utm_to_v3(struct UtmCoor_d *_utm_d) {
     return _fv3;
 }
 
+inline struct FloatVect3 utm_to_v3(struct UtmCoor_f *_utm_f) {
+    struct FloatVect3 _fv3;
+    _fv3.x = _utm_f->north;
+    _fv3.y = _utm_f->east;
+    _fv3.z = -_utm_f->alt;
+    return _fv3;
+}
 
 
 /// three functions below here are from follow_me_controller
 // void follow_me_compute_wp(void);
 // Function that is executed each time the GROUND_GPS message is received
-#if PF_USE_GROUND_GPS
-void parse_ground_gps(uint8_t *buf){
-    if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
-        return;
-
-    // Save the received values
-    ground_lla.lat = DL_GROUND_GPS_lat(buf);
-    ground_lla.lon = DL_GROUND_GPS_lon(buf);
-    ground_lla.alt = DL_GROUND_GPS_alt(buf);
-
-    // ground_speed = DL_GROUND_GPS_speed(buf);
-    // ground_climb = DL_GROUND_GPS_climb(buf);
-    // ground_course = DL_GROUND_GPS_course(buf);
-    old_ground_timestamp = ground_timestamp;
-    ground_timestamp = DL_GROUND_GPS_timestamp(buf);
-    // fix_mode = DL_GROUND_GPS_mode(buf);
-
-
-    /// convert lla to utm for calculating relative position btw the ground station and vehicle
-    struct LlaCoor_f _lla;
-    _lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));     // utm2lla requires rad & meters
-    _lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
-    _lla.alt = ((float)(ground_lla.alt))/1000.;
-
-    utm_of_lla_d(&ground_utm, &_lla); // east north alt;
-
-    follow_me_set_heading();    // calc heading
-}
-
-//int counter_heading = 0;
-void follow_me_set_heading(void){
-    // Obtain follow me heading based on position
-//    counter_heading++;
-//    if (counter_heading == heading_calc_counter){
-//        counter_heading = 0;
-        float diff_x;
-        float diff_y;
-        // This is probably used in order to skip the first loop as ground_utm_old is set to 0 initially
-        if (ground_utm_old.north != 0 && ground_utm_old.east != 0){
-            diff_y = ground_utm.north - ground_utm_old.north;
-            diff_x = ground_utm.east - ground_utm_old.east;
-        } else {
-            diff_x = 0;
-            diff_y = 0;
-        }
-
-        // Obtain average heading over this new distance
-        // Note atan2 gives results between -180 and 180
-        ground_heading = average_heading(diff_x, diff_y);
-        ground_utm_old = ground_utm_new;
+//#if PF_USE_GROUND_GPS
+//void parse_ground_gps(uint8_t *buf){
+//    if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
+//        return;
+//
+//    // Save the received values
+//    ground_lla.lat = DL_GROUND_GPS_lat(buf);
+//    ground_lla.lon = DL_GROUND_GPS_lon(buf);
+//    ground_lla.alt = DL_GROUND_GPS_alt(buf);
+//
+//    // ground_speed = DL_GROUND_GPS_speed(buf);
+//    // ground_climb = DL_GROUND_GPS_climb(buf);
+//    // ground_course = DL_GROUND_GPS_course(buf);
+//    old_ground_timestamp = ground_timestamp;
+//    ground_timestamp = DL_GROUND_GPS_timestamp(buf);
+//    // fix_mode = DL_GROUND_GPS_mode(buf);
+//
+//
+//    /// convert lla to utm for calculating relative position btw the ground station and vehicle
+//    struct LlaCoor_d _lla;
+//    _lla.lat = RadOfDeg((double)(ground_lla.lat / 1e7));     // utm2lla requires rad & meters
+//    _lla.lon = RadOfDeg((double)(ground_lla.lon / 1e7));
+//    _lla.alt = ((double)(ground_lla.alt))/1000.;
+//
+//    utm_of_lla_d(&pf_ground_utm, &_lla); // east north alt;
+//
+//    follow_me_set_heading();    // calc heading
+//}
+//
+////int counter_heading = 0;
+//void follow_me_set_heading(void){
+//    // Obtain follow me heading based on position
+////    counter_heading++;
+////    if (counter_heading == heading_calc_counter){
+////        counter_heading = 0;
+//        float diff_x;
+//        float diff_y;
+//        // This is probably used in order to skip the first loop as ground_utm_old is set to 0 initially
+//        if (pf_ground_utm_old.north != 0 && pf_ground_utm_old.east != 0){
+//            diff_y = pf_ground_utm.north - pf_ground_utm_old.north;
+//            diff_x = pf_ground_utm.east - pf_ground_utm_old.east;
+//        } else {
+//            diff_x = 0;
+//            diff_y = 0;
+//        }
+//
+//        // Obtain average heading over this new distance
+//        // Note atan2 gives results between -180 and 180
+//        ground_heading = average_heading(diff_x, diff_y);
+//        pf_ground_utm_old = pf_ground_utm;
+////    }
+//}
+//
+//// Calculate the average gps heading in order to predict where the boat is going
+//// This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
+//// The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
+//static float _all_diff_x[HEADING_QUEUE_SIZE]={0};
+//static float _all_diff_y[HEADING_QUEUE_SIZE]={0};
+//// Parameter which keeps track of the value that needs to be replaced
+//uint8_t heading_queue_idx = 0;
+////function definition
+//float average_heading(float diffx, float diffy)
+//{
+//    float Sum_x = 0;
+//    float Sum_y = 0;
+//
+//    _all_diff_x[heading_queue_idx] = diffx;
+//    _all_diff_y[heading_queue_idx] = diffy;
+//
+//    heading_queue_idx++;
+//    heading_queue_idx %= HEADING_QUEUE_SIZE;
+//
+//    for (int i=0; i<HEADING_QUEUE_SIZE; i++){
+//        Sum_x = Sum_x + _all_diff_x[i];
+//        Sum_y = Sum_y + _all_diff_y[i];
 //    }
-}
-
-// Calculate the average gps heading in order to predict where the boat is going
-// This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
-// The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
-float all_diff_x[HEADING_QUEUE_SIZE]={0};
-float all_diff_y[HEADING_QUEUE_SIZE]={0};
-// Parameter which keeps track of the value that needs to be replaced
-uint8_t heading_queue_idx = 0;
-//function definition
-float average_heading(float diffx, float diffy)
-{
-    float Sum_x = 0;
-    float Sum_y = 0;
-
-    all_diff_x[heading_queue_idx] = diffx;
-    all_diff_y[heading_queue_idx] = diffy;
-
-    heading_queue_idx++;
-    heading_queue_idx %= HEADING_QUEUE_SIZE;
-
-    for (int i=0; i<HEADING_QUEUE_SIZE; i++){
-        Sum_x = Sum_x + all_diff_x[i];
-        Sum_y = Sum_y + all_diff_y[i];
-    }
-
-    // Check for condition in which we are not moving
-    // In case we are not moving keep the current heading
-    if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
-        stationary_ground = 1;
-        return default_heading;
-    } else {
-        stationary_ground = 0;
-        float heading = 0.0;
-        // First check cases which divide by 0
-        if (Sum_y == 0.0){
-            if (Sum_x > 0.0){
-                heading = 90.0;
-            } else if (Sum_x < 0.0){
-                heading = -90.0;
-            }
-        } else {
-            heading = atan2(Sum_x, Sum_y)*180.0/M_PI;  // returns value between -180 and 180 (at least no other values have been found yet)
-        }
-        return heading;
-    }
-}
-#endif
+//
+//    // Check for condition in which we are not moving
+//    // In case we are not moving keep the current heading
+//    if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
+//        _stationary_ground = 1;
+//        return PF_DEFAULT_HEADING;
+//    } else {
+//        _stationary_ground = 0;
+//        float heading = 0.0;
+//        // First check cases which divide by 0
+//        if (Sum_y == 0.0){
+//            if (Sum_x > 0.0){
+//                heading = 90.0;
+//            } else if (Sum_x < 0.0){
+//                heading = -90.0;
+//            }
+//        } else {
+//            heading = atan2(Sum_x, Sum_y)*180.0/M_PI;  // returns value between -180 and 180 (at least no other values have been found yet)
+//        }
+//        return heading;
+//    }
+//}
+//#endif
 
 
 /// the actual potential flow calculation
@@ -296,10 +311,10 @@ void init_potential_flow_simulator(void)
     // init ref wind velocity
 
 //    if (PF_USE_GROUND_GPS == 0) {
-    ground_utm.east = 0;
-    ground_utm.north = 0;
-    ground_utm.alt = 0;
-    ground_heading = 0;
+//    pf_ground_utm.east = 0;
+//    pf_ground_utm.north = 0;
+//    pf_ground_utm.alt = 0;
+//    ground_heading = 0;
 
 //    cout << "init PF" << endl;
 
@@ -313,7 +328,7 @@ void potential_flow_simulator_periodic(void)
 //    cout << "periodic PF" << endl;
 
     /// check if I use ground gps and already have the ground position
-    // if(bit_is_set(ground_utm, something)) {}
+    // if(bit_is_set(pf_ground_utm, something)) {}
 
     /// retrieve vehicle position & convert it to utm_ds
     // why lla->utm??: for accuracy. but IDK whether I really need it..
@@ -345,16 +360,21 @@ void potential_flow_simulator_periodic(void)
     /// then I have ground station position and vehicle position both in UTM
     /// AND IN OBSTACLE's body frame!!! !!! !!!
     struct FloatVect3 vehicle_position_in_ground_body_frame =
-            rotate_frame(&vehicle_position_v3, ground_heading-vehicle_heading);
+//            rotate_frame(&vehicle_position_v3, ground_heading-vehicle_heading);
+            rotate_frame(&vehicle_position_v3, follow_me_heading-vehicle_heading);
 
 //    cout << vehicle_position_in_ground_body_frame.x << ", " << vehicle_position_in_ground_body_frame.y << ", "
 //    << vehicle_position_in_ground_body_frame.z << endl;
+
+//    utm_of_lla_d(&pf_ground_utm, &_lla); // east north alt;
+//    struct FloatVect3 ground_position_v3_enu = utm_to_v3(&pf_ground_utm);
 
     struct FloatVect3 ground_position_v3_enu = utm_to_v3(&ground_utm);
 
 //    cout << ground_position_v3_enu.x << ", " << ground_position_v3_enu.y << ", " << ground_position_v3_enu.z << endl;
 
-    struct FloatVect3 ground_position_v3 = rotate_frame(&ground_position_v3_enu, ground_heading);
+//    struct FloatVect3 ground_position_v3 = rotate_frame(&ground_position_v3_enu, ground_heading);
+    struct FloatVect3 ground_position_v3 = rotate_frame(&ground_position_v3_enu, follow_me_heading);
 
 //    cout << ground_position_v3.x << ", " << ground_position_v3.y << ", " << ground_position_v3.z << endl;
 
@@ -383,7 +403,8 @@ void potential_flow_simulator_periodic(void)
 
 //    cout << wind_vel_v3f.x << ", " << wind_vel_v3f.y << ", " << wind_vel_v3f.z << endl;
 
-    struct FloatVect3 wind_in_ned = rotate_frame(&wind_vel_v3f, -ground_heading);
+//    struct FloatVect3 wind_in_ned = rotate_frame(&wind_vel_v3f, -ground_heading);
+    struct FloatVect3 wind_in_ned = rotate_frame(&wind_vel_v3f, -follow_me_heading);
 //    cout << "periodic PF 4" << endl;
 
     struct FloatVect2 hor_wind;
@@ -392,7 +413,7 @@ void potential_flow_simulator_periodic(void)
 
     float ver_wind = wind_in_ned.z;
 
-//    cout << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
+    cout << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
 
     // Set wind speed (state)
     stateSetHorizontalWindspeed_f(&hor_wind);

@@ -406,7 +406,10 @@ void v_ctl_climb_loop(void)
                               + v_ctl_auto_throttle_of_airspeed_pgain * speed_error
                               + v_ctl_energy_total_pgain * en_tot_err;
 
-  if ((controlled_throttle >= 1.0f) || (controlled_throttle <= 0.0f) || (autopilot_throttle_killed() == 1)) {
+#ifdef CJ_FOLLOW_ME
+
+#else //    Chris commented this out for some reason, but is it necessary?
+    if ((controlled_throttle >= 1.0f) || (controlled_throttle <= 0.0f) || (autopilot_throttle_killed() == 1)) {
     // If your energy supply is not sufficient, then neglect the climb requirement
     en_dis_err = -vdot_err;
 
@@ -414,6 +417,7 @@ void v_ctl_climb_loop(void)
     if (v_ctl_climb_setpoint > 0) { v_ctl_climb_setpoint += - 30. * dt_attidude; }
     if (v_ctl_climb_setpoint < 0) { v_ctl_climb_setpoint +=   30. * dt_attidude; }
   }
+#endif
 
 
   /* pitch pre-command */
@@ -431,6 +435,13 @@ void v_ctl_climb_loop(void)
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + nav_pitch;
+#ifdef CJ_FOLLOW_ME
+  // aa
+
+    if (follow_me_pitch){
+        v_ctl_pitch_setpoint += v_ctl_pitch_setpoint_follow_me;
+    }
+#endif
   Bound(v_ctl_pitch_setpoint, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT)
 
   ac_char_update(controlled_throttle, v_ctl_pitch_of_vz, v_ctl_climb_setpoint, v_ctl_desired_acceleration);

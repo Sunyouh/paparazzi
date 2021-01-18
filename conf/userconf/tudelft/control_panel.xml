@@ -43,7 +43,7 @@
     <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy"/>
     <program name="Ivy2Nmea" command="sw/ground_segment/tmtc/ivy2nmea">
       <arg flag="--port" constant="/dev/ttyUSB1"/>
-      <arg flag="--id" constant="1"/>
+      <arg flag="--id" constant="@AC_ID"/>
     </program>
     <program name="Gazebo" command="sw/tools/gzclient_launcher.sh"/>
     <program name="BluegigaUsbDongleScanner" command="sw/tools/bluegiga_usb_dongle/bluegiga_usb_driver">
@@ -65,6 +65,7 @@
     <program name="EnergyManager" command="sw/ground_segment/python/energy_mon/energy_mon.py"/>
     <program name="IridiumDialer" command="sw/tools/iridium/iridium_link.py"/>
     <program name="PayloadForward" command="sw/ground_segment/python/payload_forward/payload.py"/>
+    <program name="WindDataImporter" command="sw/ground_segment/python/wind_data_importer/wind_data_importer.py"/>
   </section>
   <section name="sessions">
     <session name="helidd">
@@ -305,6 +306,7 @@
       <program name="Server">
         <arg flag="-n"/>
       </program>
+    <program name="Messages"/>
       <program name="GCS">
         <!--<arg flag="-speech"/>-->
         <arg flag="-maximize"/>
@@ -316,6 +318,96 @@
       </program>
       <program name="Gazebo"/>
 <!--      <program name="RtpViewer"/>-->
+    </session>
+    <session name="Simulation - Gazebo + CFD">
+      <program name="Simulator">
+        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+<!--      <program name="Data Link" command="sw/ground_segment/tmtc/link">-->
+<!--        <arg flag="-d" constant="/dev/ttyUSB0"/>-->
+<!--      </program>-->
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+<!--      <program name="Messages" command="sw/ground_segment/tmtc/messages -c datalink -c ground"/>-->
+
+      <program name="GCS">
+        <!--<arg flag="-speech"/>-->
+        <arg flag="-maximize"/>
+        <arg flag="-center_ac"/>
+        <arg flag="-mercator"/>
+        <arg flag="-maps_no_http"/>
+        <arg flag="-track_size" constant="200"/>
+        <arg flag="-zoom" constant="40."/>
+      </program>
+      <program name="Gazebo"/>
+<!--      <program name="WindDataImporter"/>-->
+      <!--      <program name="RtpViewer"/>-->
+      <program name="GPSd position display">
+        <arg flag="--ac" constant="@AIRCRAFT"/>
+        <arg flag="--simulate"/>
+      </program>
+    </session>
+    <session name="Simulation - CFD">
+      <program name="Simulator">
+        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <!--      <program name="Data Link" command="sw/ground_segment/tmtc/link">-->
+      <!--        <arg flag="-d" constant="/dev/ttyUSB0"/>-->
+      <!--      </program>-->
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <!--      <program name="Messages" command="sw/ground_segment/tmtc/messages -c datalink -c ground"/>-->
+
+      <program name="GCS">
+        <!--<arg flag="-speech"/>-->
+        <arg flag="-maximize"/>
+        <arg flag="-center_ac"/>
+        <arg flag="-mercator"/>
+        <arg flag="-maps_no_http"/>
+        <arg flag="-track_size" constant="200"/>
+        <arg flag="-zoom" constant="40."/>
+      </program>
+<!--      <program name="Gazebo"/>-->
+      <!--      <program name="WindDataImporter"/>-->
+      <!--      <program name="RtpViewer"/>-->
+      <program name="GPSd position display">
+        <arg flag="--ac" constant="@AIRCRAFT"/>
+        <arg flag="--simulate"/>
+      </program>
+    </session>
+    <session name="Simulation - tmp">
+      <program name="Simulator">
+        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="GCS">
+        <!--<arg flag="-speech"/>-->
+        <arg flag="-maximize"/>
+        <arg flag="-center_ac"/>
+        <arg flag="-mercator"/>
+        <arg flag="-maps_no_http"/>
+        <arg flag="-track_size" constant="200"/>
+        <arg flag="-zoom" constant="40."/>
+      </program>
     </session>
     <session name="Simulation - Gazebo + Joystick">
       <program name="Simulator">

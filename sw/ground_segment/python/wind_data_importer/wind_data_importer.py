@@ -57,7 +57,7 @@ def get_wind(east, north, up):
     loc = np.array([east, north, up])
     # TODO: check position
     loc = loc - origin
-    # print("loc:",loc)
+    # print("loc:", loc)
     weast, wnorth, wup = importer.get_wind(loc)
     # weast, wnorth, wup = np.random.rand()*3, np.random.rand()*3, np.random.rand()*2
     return weast, wnorth, wup
@@ -70,16 +70,28 @@ def cfd_wind_cb(ac_id, msg):
     """
     # request location (in meters)
 
-    # lat, lon, alt.. & e, n, u (3,4,5)
-    east, north, up = float(msg.get_field(3)), \
-                      float(msg.get_field(4)), \
-                      float(msg.get_field(5))
-    weast, wnorth, wup = get_wind(east, north, up)
-    msg_back=PprzMessage("ground", "CFD_WIND")
-    msg_back.set_value_by_name("wind_east",weast)
-    msg_back.set_value_by_name("wind_north",wnorth)
-    msg_back.set_value_by_name("wind_up",wup)
-    ivy.send(msg_back, None)
+    # lat, lon, alt.. & e, n, u (3,4,5)???????????/ ned
+    north, east, down = float(msg.get_field(1)), \
+                        float(msg.get_field(2)), \
+                        float(msg.get_field(3))
+    weast, wnorth, wup = get_wind(east, north, -down)
+    # print("wind: ", weast, wnorth, wup)
+    # print("")
+
+    if weast == wnorth == wup == 0:
+        return
+
+    # east, north, up = float(msg.get_field(3)), \
+    #                   float(msg.get_field(4)), \
+    #                   float(msg.get_field(5))
+    # weast, wnorth, wup = get_wind(east, north, up)
+    msg_back = PprzMessage("datalink", "CFD_WIND_DATA")
+    msg_back.set_value_by_name("ac_id", msg.get_field(0))
+    msg_back.set_value_by_name("wind_east", weast)      # TODO
+    msg_back.set_value_by_name("wind_north", wnorth)
+    msg_back.set_value_by_name("wind_up", wup)
+    # ivy.send_raw_datalink(msg_back)
+    ivy.send(msg_back)
 
 
 # def worldenv_cb(ac_id, msg):
@@ -125,8 +137,9 @@ def main():
     argp.add_argument("-p", "--type", required=False, default=0, type=int,
                         help="Specify the type; 0=CFD, 1=")
 
-    argp.add_argument("-f", "--file", required=False, default="/home/sunyou/tud/cfd/export_cfd_hill_10.csv",
-                      help="OpenFOAM result file in full path")
+    argp.add_argument("-f", "--file", required=False,
+                      default="/home/sunyou/tud/cfd/result_csv_files/export_hill_rev_100m_9.csv",
+                      help="CFD result file in full path")
 
     argp.add_argument("-t", "--time-step", required=False, type=int,
                       help="Time step for importing dynamic/time-variant CFD simulation. "
@@ -136,7 +149,7 @@ def main():
                       default=0.,
                       help="Origin position x (EAST).")
     argp.add_argument("-y", "--origin-y", required=False, type=float,
-                      default=0.,
+                      default=100.,
                       help="Origin position y (NORTH).")
     argp.add_argument("-z", "--origin-z", required=False, type=float,
                       default=0.,
@@ -144,10 +157,10 @@ def main():
 
     # default wind speed in ENU
     argp.add_argument("-i", "--inlet-wind-speed-east", required=False, type=float,
-                      default=0.,
+                      default=0,
                       help="Inlet wind speed (EAST), default value is (0, 10, 0) in ENU")
     argp.add_argument("-j", "--inlet-wind-speed-north", required=False, type=float,
-                      default=10.,
+                      default=-8,
                       help="Inlet wind speed (NORTH), default value is (0, 10, 0) in ENU")
     argp.add_argument("-k", "--inlet-wind-speed-up", required=False, type=float,
                       default=0.,
@@ -175,8 +188,8 @@ def main():
 
     global ivy
     ivy = IvyMessagesInterface("WindSimulationData")
-    # ivy.subscribe(worldenv_cb,'(.* WORLD_ENV_REQ .*)')
-    ivy.subscribe(cfd_wind_cb, '(.* CFD_WIND_REQ .*)')
+    # ivy.subscribe(cfd_wind_cb, '(.* CFD_WIND_REQ .*)')
+    ivy.subscribe(cfd_wind_cb, '(.* LTP_POSITION .*)')
 
     # wait for ivy to stop
     from ivy.std_api import IvyMainLoop  # noqa
