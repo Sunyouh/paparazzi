@@ -85,7 +85,7 @@ class CFDImporter:
         wind_data = list(_y_nearest_arr)[0]
         """
         OpenFoam x:North y:West z:Up
-        ANSYS: ? TODO: check ANSYS frame
+        ANSYS: check frame setting
         return *ENU*
         """
         if (abs(wind_data[3])+abs(wind_data[4])+abs(wind_data[5])) < self.inlet_wind_speed_sum:
@@ -103,36 +103,27 @@ class CFDImporter:
 
 
 """
-# Create coordinate pairs
-cartcoord = list(zip(x, y))
-
-
-X = np.linspace(min(x), max(x))
-Y = np.linspace(min(y), max(y))
-X, Y = np.meshgrid(X, Y)
-
-# Approach 1
-interp = scipy.interpolate.LinearNDInterpolator(cartcoord, z, fill_value=0)
-Z0 = interp(X, Y)
+could do some interpolation... but not the trilinear with all the values
+maybe linear interp btw two nearest points? but it is 3d - how to determine what is the nearest?
 """
 
 
 def main():
     print("This main fn is only for a test")
-    fname = "/home/sunyou/tud/cfd/export_sample.csv"
-    importer = CFDImporter()
-    importer.init_importer(fname)
-    sum_t = 0
-
-    for i in range(500):
-        _t1 = time.time()
-        # wind = importer.get_wind((123, -50.5, 150))
-        wind = importer.get_wind((np.random.randint(0, 300), np.random.randint(-50, 50), np.random.randint(0, 300)))
-        _t2 = time.time()
-        sum_t += (_t2 - _t1)*1000
-
-    print(sum_t / 500)
-    # print(wind)
+    # fname = "/home/sunyou/tud/cfd/export_sample.csv"
+    # importer = CFDImporter()
+    # importer.init_importer(fname)
+    # sum_t = 0
+    #
+    # for i in range(500):
+    #     _t1 = time.time()
+    #     # wind = importer.get_wind((123, -50.5, 150))
+    #     wind = importer.get_wind((np.random.randint(0, 300), np.random.randint(-50, 50), np.random.randint(0, 300)))
+    #     _t2 = time.time()
+    #     sum_t += (_t2 - _t1)*1000
+    #
+    # print(sum_t / 500)
+    # # print(wind)
 
 
 if __name__ == '__main__':

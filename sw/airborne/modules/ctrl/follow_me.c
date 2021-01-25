@@ -83,9 +83,9 @@ float pitch_enable = 0; // when this y distance is exceeded the pitch PID is ena
 float pitch_disable = 0; // when the y distance is lower the pitch PID is disabled again
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
 //float pitch_pgain = -0.03;
-float pitch_pgain = -0.53;
+float pitch_pgain = -0.03;
 float pitch_dgain = 0;
-float pitch_igain = 0;
+float pitch_igain = 0.1;
 float pitch_sum_err = 0;
 float pitch_limit = 1.047; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float v_ctl_pitch_setpoint_follow_me = 0;
@@ -94,8 +94,8 @@ float v_ctl_pitch_setpoint_follow_me = 0;
 float airspeed_sum_err = 0.0;
 // Should be defined positive
 float airspeed_pgain = 0.4;
-float airspeed_igain = 0.00;
-float airspeed_dgain = 0.00;
+float airspeed_igain = 0.10;
+float airspeed_dgain = 0.10;
 
 // Keep track of current position with respect of waypoint
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
@@ -396,6 +396,10 @@ void follow_me_soar_here(void){
 		follow_me_distance_2 = follow_me_distance + 30;
 		lateral_offset = state_in_boat_frame.x;
 
+		// set throttle gains
+        v_ctl_auto_throttle_nominal_cruise_throttle = 0.0;
+//        v_ctl_auto_throttle_climb_throttle_increment = 0.1;
+//        v_ctl_auto_throttle_of_airspeed_pgain =0.01;
 	}
 }
 
@@ -459,7 +463,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	// Automatically move waypoint in case AUTO2 is engaged
 	// It is assumed that the GROUND_GPS message is send constantly otherwise verifying this here will cause delays
 	if ((autopilot.mode == 2) && (follow_me_autopilot_mode != 2)){
-		follow_me_soar_here();
+//		follow_me_soar_here();
 	}
 	follow_me_autopilot_mode =  autopilot.mode;
 
@@ -597,14 +601,14 @@ void follow_me_throttle_loop(void){
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err - (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
 	// Add airspeed inc to average airspeed
-	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f() + airspeed_inc);
+	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f() + airspeed_inc)+0.5;
 
-	if (v_ctl_auto_airspeed_setpoint < 0){
-		v_ctl_auto_airspeed_setpoint = 0;
+	if (v_ctl_auto_airspeed_setpoint < 9){
+		v_ctl_auto_airspeed_setpoint = 9;
 	}
 
-	if (v_ctl_auto_airspeed_setpoint > 21){
-		v_ctl_auto_airspeed_setpoint = 21;
+	if (v_ctl_auto_airspeed_setpoint > 25){
+		v_ctl_auto_airspeed_setpoint = 25;
 	}
 
 }

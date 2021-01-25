@@ -248,7 +248,7 @@
 
 
     <!-- Energy Control Algorithm -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="16.0"/>
     <!-- <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/> -->
 
       <!--      <define name="ALTITUDE_PGAIN" value="0.18"/>-->
@@ -256,9 +256,9 @@
       <!--      <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="1.7"/> &lt;!&ndash; set to 0 in order to be able to soar without throttle - was 0.5 before last flight&ndash;&gt;-->
       <!--      <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.3"/>-->
 
-      <define name="ALTITUDE_PGAIN" value="0.08"/>
+      <define name="ALTITUDE_PGAIN" value="0.48"/>
       <define name="AIRSPEED_PGAIN" value="0.01"/>  <!--  changed during last flight, was 0.19 -->
-      <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0"/> <!-- set to 0 in order to be able to soar without throttle - was 0.5 before last flight-->
+      <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/> <!-- set to 0 in order to be able to soar without throttle - was 0.5 before last flight-->
       <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.3"/>
 
     <define name="ALTITUDE_MAX_CLIMB" value="3.0"/>
@@ -268,14 +268,14 @@
     <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.00"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.00"/>
 
-    <define name="ENERGY_TOT_PGAIN" value="0.1"/>
+    <define name="ENERGY_TOT_PGAIN" value="0.3"/>
     <define name="ENERGY_TOT_IGAIN" value="0.0"/>
     <define name="ENERGY_DIFF_PGAIN" value="0.07"/>
     <define name="ENERGY_DIFF_IGAIN" value="0.02"/>
 
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.7" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.9" unit="%/(m/s)"/>
 
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.01"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.001"/>
 
   </section>
