@@ -362,7 +362,6 @@ static void gazebo_write(void)
 
     // TODO: check multi-rotor coordinate
 
-/// ltp == NED ...?????????????wtf and PPRZ gcs is something like enu........ it is a total mess.
     struct NedCoor_f *_ltp_pos = stateGetPositionNed_f();
 //    VECT3_COPY(_ltp_pos, fdm.ltpprz_pos);
     ignition::math::Vector3d pos_v3d = to_gazebo_position(_ltp_pos);

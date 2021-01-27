@@ -117,7 +117,7 @@ uint8_t stationary_ground = 0; // boolean to keep track on whether ground statio
 
 // Variables initialised in functions themselves
 static bool ground_set; // boolean to decide whether GPS message was received or not / in case this boolean is false then we upadte the altitude directly and not the height (as we dont have a relative position for the height)
-static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
+struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
 static uint32_t ground_timestamp; // only execut set wp function if we received a newer timestamp
 static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
