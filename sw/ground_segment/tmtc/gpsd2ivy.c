@@ -113,12 +113,13 @@ TIME_T sim_time = TIME_INIT;
 
 int change_state_at = 100000000;
 
-static inline void increase_time(double *v_t, int _sec){
-    *v_t = *v_t + _sec;
-}
 #if GPSD_API_MAJOR_VERSION > 6
 static inline void increase_time(timespec_t *v_t, int _sec){
     v_t->tv_sec = v_t->tv_sec + _sec;
+}
+#else
+static inline void increase_time(double *v_t, int _sec){
+    *v_t = *v_t + _sec;
 }
 #endif
 
