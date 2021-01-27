@@ -139,12 +139,12 @@ def main():
                                          "for Paparazzi from CFD or potential flow simulation")
 
     argp.add_argument("-f", "--file", required=False,
-                      default="/home/sunyou/tud/cfd/result_csv_files/export_hill_rev_100m_12.csv",
-                      help="CFD result file in full path")
+                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_rev_100m_12.csv",
+                      help="CFD result file path, relative from pprz home")
 
-    argp.add_argument("-t", "--time-step", required=False, type=int,
-                      help="Time step for importing dynamic/time-variant CFD simulation. "
-                           "Not required for steady-states.")
+    # argp.add_argument("-t", "--time-step", required=False, type=int,
+    #                   help="Time step for importing dynamic/time-variant CFD simulation. "
+    #                        "Not required for steady-states.")
 
     argp.add_argument("-x", "--origin-x", required=False, type=float,
                       default=0.,
