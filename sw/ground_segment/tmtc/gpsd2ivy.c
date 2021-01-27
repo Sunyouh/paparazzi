@@ -108,9 +108,19 @@ float sim_course = 0;
 float sim_speed = 0;
 float sim_altitude = 0;
 float sim_climb = 0;
-int sim_time = 0;
+//int sim_time = 0;
+TIME_T sim_time = TIME_INIT;
 
 int change_state_at = 100000000;
+
+static inline void increase_time(double *v_t, int _sec){
+    *v_t = *v_t + _sec;
+}
+#if GPSD_API_MAJOR_VERSION > 6
+static inline void increase_time(timespec_t *v_t, int _sec){
+    v_t->tv_sec = v_t->tv_sec + _sec;
+}
+#endif
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
@@ -120,20 +130,21 @@ static void update_gps(struct gps_data_t *gpsdata,
 #undef TIMEOUT_PERIOD       // This is a ridiculous way to control the update frequency..................holy..
 #define TIMEOUT_PERIOD 100
 		// Increase time step
-	    sim_time += 1;
-	    if (sim_time%(4*change_state_at) == 0){
-	    	sim_lat_speed = -60*1e-7;
-	    	sim_lon_speed = -60*1e-7;
-	    } else if (sim_time%(3*change_state_at) == 0){
-	    	sim_lat_speed = 60*1e-7;
-	    	sim_lon_speed = -60*1e-7;
-	    } else if (sim_time%(2*change_state_at) == 0){
-	    	sim_lat_speed = 60*1e-7;
-	        sim_lon_speed = 60*1e-7;
-	    } else if (sim_time%(change_state_at) == 0){
-	    	sim_lat_speed = -60*1e-7;
-	        sim_lon_speed = 60*1e-7;
-	    }
+//	    sim_time += 1;
+        increase_time(&sim_time, 1);
+//	    if (sim_time%(4*change_state_at) == 0){
+//	    	sim_lat_speed = -60*1e-7;
+//	    	sim_lon_speed = -60*1e-7;
+//	    } else if (sim_time%(3*change_state_at) == 0){
+//	    	sim_lat_speed = 60*1e-7;
+//	    	sim_lon_speed = -60*1e-7;
+//	    } else if (sim_time%(2*change_state_at) == 0){
+//	    	sim_lat_speed = 60*1e-7;
+//	        sim_lon_speed = 60*1e-7;
+//	    } else if (sim_time%(change_state_at) == 0){
+//	    	sim_lat_speed = -60*1e-7;
+//	        sim_lon_speed = 60*1e-7;
+//	    }
 	    // Simulate heading change
 	    sim_lat += sim_lat_speed;
 	    sim_lon += sim_lon_speed;
@@ -157,7 +168,6 @@ static void update_gps(struct gps_data_t *gpsdata,
     // Only anlyse data if we have a fix and did not transmit this timestep already 
     if ((isnan(gpsdata->fix.latitude) == 0) &&
        (isnan(gpsdata->fix.longitude) == 0) &&
-       (isnan(gpsdata->fix.time) == 0) &&
        (gpsdata->fix.mode >= MODE_2D) &&
             !IS_TIME_EQUAL(gpsdata->fix.time, fix_time))
     {
@@ -201,9 +211,9 @@ static void update_gps(struct gps_data_t *gpsdata,
  */
         // Send GROUND_GPS message for data
         if(strcmp(ac, "NONE") != 0) {
-            IvySendMsg("%s GROUND_GPS %s %d %d %d %d", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), (int)(gpsdata->fix.time));
+            IvySendMsg("%s GROUND_GPS %s %d %d %d %d", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), (int)(TIME_IN_SEC(gpsdata->fix.time)));
             if (verbose)
-                printf("%s GROUND_GPS %s %d %d %d %f %f %f %f %d\n", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), fix_speed, fix_climb, fix_track, gpsdata->fix.time, gpsdata->fix.mode);
+                printf("%s GROUND_GPS %s %d %d %d %f %f %f %f %d\n", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), fix_speed, fix_climb, fix_track, TIME_IN_SEC(gpsdata->fix.time), gpsdata->fix.mode);
         }
 
         // Move WP in case we know which waypoint and we know what to do with the data
