@@ -398,8 +398,8 @@ void follow_me_soar_here(void){
 
 		// set throttle gains
         v_ctl_auto_throttle_nominal_cruise_throttle = 0.0;
-//        v_ctl_auto_throttle_climb_throttle_increment = 0.1;
-//        v_ctl_auto_throttle_of_airspeed_pgain =0.01;
+        v_ctl_auto_throttle_climb_throttle_increment = 0.1;
+//        v_ctl_auto_throttle_of_airspeed_pgain = 0.2;
 	}
 }
 

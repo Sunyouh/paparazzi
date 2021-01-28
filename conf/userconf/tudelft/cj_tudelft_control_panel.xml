@@ -270,43 +270,6 @@
         <arg flag="--ac" constant="@AC_ID"/>
         <arg flag="--simulate"/>
       </program>
-      <program name="Environment Simulator">
-        <arg flag="-w" constant="3"/> <!-- Wind speed -->
-        <arg flag="-d" constant="0"/> <!-- Wind direction -->
-        <arg flag="-u" constant="1.7"/>
-      </program>
-      <program name="Real-time Plotter">
-        <!-- <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Course"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:course:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:psi:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Roll"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:roll:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:phi:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Pitch"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/>
-        <arg flag="-n"/>-->
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Airspeed"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>
-        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-      </program>
     </session>
 
 

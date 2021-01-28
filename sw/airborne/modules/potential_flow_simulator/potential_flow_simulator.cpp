@@ -62,7 +62,7 @@ using namespace std;
 #define PF_OBSTACLE_TYPE 1
 #endif
 #ifndef PF_OBSTACLE_POSITION_X
-#define PF_OBSTACLE_POSITION_X 50
+#define PF_OBSTACLE_POSITION_X 180
 #endif
 #ifndef PF_OBSTACLE_POSITION_Y
 #define PF_OBSTACLE_POSITION_Y 0
@@ -72,7 +72,7 @@ using namespace std;
 #endif
 // reference wind velocity: x dir in the obstacle's body frame
 #ifndef PF_REF_WIND_VEL
-#define PF_REF_WIND_VEL 4
+#define PF_REF_WIND_VEL -11
 #endif
 // whether use ground gps or not
 #ifndef PF_USE_GROUND_GPS
@@ -86,16 +86,6 @@ using namespace std;
 #ifndef PF_DEFAULT_HEADING
 #define PF_DEFAULT_HEADING 0
 #endif
-
-// other constants
-#define HEADING_QUEUE_SIZE 10
-
-//static struct LlaCoor_d ground_lla; // lla coordinates received by the GPS message
-//struct UtmCoor_d pf_ground_utm, pf_ground_utm_old;
-//float ground_heading;
-//static uint32_t ground_timestamp;
-//static uint32_t old_ground_timestamp;
-//static uint8_t _stationary_ground = 0;
 
 //struct FloatVect3 calc_relative_position(struct UtmCoor_f *utm_vehicle, struct UtmCoor_f *utm_ground);
 //struct LlaCoor_d *to_lla_d(struct LlaCoor_f *_lla_f);
@@ -166,90 +156,67 @@ inline struct FloatVect3 utm_to_v3(struct UtmCoor_f *_utm_f) {
  * 2d potential flow calculation (ignores y component)
  */
 struct FloatVect3 compute_potential_flow(struct FloatVect3 rel_dist_v3f, float ref_wind_speed){
-    float _y = rel_dist_v3f.y;
+    float _x = rel_dist_v3f.x;
     float _z = rel_dist_v3f.z;
 
-    float _theta = atan2(-_z, _y);
-    float _r = sqrt(_y*_y+_z*_z);
-
+    float _theta = atan2(-_z, _x);
+    float _r = sqrt(_x*_x+_z*_z);
     float _R = PF_OBSTACLE_RADIUS;     // cylinder radius
+
+//    cout << "r; " << _r << ", R: " << _R << endl;
 
     float u_r = (1 - ((_R*_R)/(_r*_r))) * ref_wind_speed * cosf(_theta);      // Vinf * (1-R*R/r*r) * cos(tht)
     float u_th = -(1 + ((_R*_R)/(_r*_r))) * ref_wind_speed * sinf(_theta);    // - Vinf * (1+R*R/r*r) * sin(tht)
 
-//    cout << theta << ", " << u_r << ", " << u_th << endl;
+//    cout << "t,r,th: " << _theta*180/M_PI << ", " << u_r << ", " << u_th << endl;
 
     float z_circle = -0.01;
-    if (_R*_R - _y*_y > 0){       // what is this for?
-        z_circle = -1*sqrt(_R*_R - _y*_y);
+    if (_R*_R - _x*_x > 0){       // what is this for?
+        z_circle = -1*sqrt(_R*_R - _x*_x);
     }
 
 //    cout << "; " << (_z - z_circle) << "< " << PF_SURFACE_ROUGHNESS << "< " << endl;
     // 2d potential flow, so there is no x component (x:east)
-    float mult_factor = (logf(-(_z - z_circle) / PF_SURFACE_ROUGHNESS)) / (logf(-(-70 - z_circle) / PF_SURFACE_ROUGHNESS));
+//    float mult_factor = (logf(-(_z - z_circle) / PF_SURFACE_ROUGHNESS)) / (logf(-(-70 - z_circle) / PF_SURFACE_ROUGHNESS));
 
-//    cout << z_circle << ", " << mult_factor << endl;
-    mult_factor = 1.0;  //TODO: temp
+//    cout << "z: " << z_circle << ", " << mult_factor << endl;
+//    float mult_factor = 1.0;  //TODO: temp
 
     struct FloatVect3 _wind_vel;
-    _wind_vel.x = 0;
-    _wind_vel.y = (cosf(_theta) * u_r) - (sinf(_theta) * u_th)*mult_factor;
-    _wind_vel.z = (sinf(_theta) * u_r) + (cosf(_theta) * u_th)*mult_factor;
+    _wind_vel.x = (cosf(_theta) * u_r) - (sinf(_theta) * u_th);
+    _wind_vel.y = 0;
+    _wind_vel.z = -((sinf(_theta) * u_r) + (cosf(_theta) * u_th));      // wind down
     // TODO: check mult_factor. what is it for?
 
-    cout << rel_dist_v3f.x << ", " << rel_dist_v3f.y << ", " << rel_dist_v3f.z << endl;
-    cout << _wind_vel.y << ", " << _wind_vel.z << endl;
+//    float tmp_x = (cosf(_theta) * u_r) - (sinf(_theta) * u_th) * mult_factor;
+//    float tmp_z = -((sinf(_theta) * u_r) + (cosf(_theta) * u_th)) * mult_factor;      // wind down
+
+//    cout << "mult: " << tmp_x << ", " << tmp_z << endl;
+
+//    cout << rel_dist_v3f.x << ", " << rel_dist_v3f.y << ", " << rel_dist_v3f.z << endl;
+//    cout << _wind_vel.y << ", " << _wind_vel.z << endl;
 
     return _wind_vel;
 }
 
-// init
 void init_potential_flow_simulator(void)
 {
     // your init code here
-
-    // init ground utm & heading
-    // init ref wind velocity
-
-//    if (PF_USE_GROUND_GPS == 0) {
-//    pf_ground_utm.east = 0;
-//    pf_ground_utm.north = 0;
-//    pf_ground_utm.alt = 0;
-//    ground_heading = 0;
-
-//    cout << "init PF" << endl;
-
-//    } /// move this to init. if it is not using ground gps, then do not update
-
 }
 
 void potential_flow_simulator_periodic(void)
 {
     // Should I use mutex?
 
-    /// check if I use ground gps and already have the ground position
-    // if(bit_is_set(pf_ground_utm, something)) {}
-
-    /// retrieve vehicle position & convert it to utm_ds
-    // why lla->utm??: for accuracy. but IDK whether I really need it..
-//    struct LlaCoor_f *vehicle_position_lla_f = stateGetPositionLla_f();
-//    cout << vehicle_position_lla_f->lon << ", " << vehicle_position_lla_f->lat << endl;
-//    struct LlaCoor_d vehicle_position_lla_d = to_lla_d(vehicle_position_lla_f);
-//    cout << vehicle_position_lla_d.lon << ", " << vehicle_position_lla_d.lat << ", " << vehicle_position_lla_d.alt << endl;
-//    struct UtmCoor_d vehicle_position_utm;
-//    utm_of_lla_d(&vehicle_position_utm, &vehicle_position_lla_d);
-//    struct FloatVect3 vehicle_position_v3 = utm_to_v3(&vehicle_position_utm);
-//    cout << vehicle_position_v3.x << ", " << vehicle_position_v3.y << ", " << vehicle_position_v3.z << endl;
-
-    struct NedCoor_f *_ltp_vehicle_pos = stateGetPositionNed_f();   // local NED
-//    struct NedCoor_f *_ltp_ground_pos = ned_of_lla_pos_f();
+    struct NedCoor_f *ltp_vehicle_pos = stateGetPositionNed_f();   // local NED
+//    struct NedCoor_f *ltp_ground_pos = ned_of_lla_pos_f();
 
     // heading
     float vehicle_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
 //    cout << "heading: " << vehicle_heading << endl;
 
     /// then I have ground station position and vehicle position
-    /// AND IN OBSTACLE's body frame!!! !!! !!!
+    /// OBSTACLE's body frame!!! !!! !!!
 //    struct FloatVect3 vehicle_position_in_ground_body_frame =
 //            rotate_frame(&vehicle_position_v3, follow_me_heading-vehicle_heading);
 
@@ -284,31 +251,37 @@ void potential_flow_simulator_periodic(void)
     /// should be a user input or a measurement
 //    float ref_wind_vel = PF_REF_WIND_VEL;
 
-    // x, y ; z does not need to be converted to the body frame bc it is alt
+    struct FloatVect3 rel_dist;
+    rel_dist.x = PF_OBSTACLE_POSITION_X - ltp_vehicle_pos->x;
+    rel_dist.y = PF_OBSTACLE_POSITION_Y - ltp_vehicle_pos->y;
+    rel_dist.z = PF_OBSTACLE_POSITION_Z - ltp_vehicle_pos->z;
+
+    cout << "dist: " << rel_dist.x << ", " << rel_dist.y << ", " << rel_dist.z << endl;
 
     /// potential flow calculation: obstacle's body frame; wind velocity (x, z) and reference wind vel (x dir)
-    struct FloatVect3 wind_vel_v3f = compute_potential_flow(dist_from_obstacle_to_vehicle, PF_REF_WIND_VEL);
+    struct FloatVect3 wind_vel_v3f = compute_potential_flow(rel_dist, PF_REF_WIND_VEL);
 
 //    cout << wind_vel_v3f.x << ", " << wind_vel_v3f.y << ", " << wind_vel_v3f.z << endl;
 
-    struct FloatVect3 wind_in_ned = rotate_frame(&wind_vel_v3f, -follow_me_heading);
+//    struct FloatVect3 wind_in_ned = rotate_frame(&wind_vel_v3f, -follow_me_heading);
 
     struct FloatVect2 hor_wind;
-    hor_wind.x = wind_in_ned.x;
-    hor_wind.y = wind_in_ned.y;
+    hor_wind.x = wind_vel_v3f.x;
+    hor_wind.y = wind_vel_v3f.y;
 
-    float ver_wind = wind_in_ned.z;
+    float ver_wind = wind_vel_v3f.z;
 
-    cout << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
+    cout << "wind: " << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
+    cout << endl;
 
 //    // Set wind speed (state)
-//    stateSetHorizontalWindspeed_f(&hor_wind);
-//    stateSetVerticalWindspeed_f(ver_wind);
-//
+    stateSetHorizontalWindspeed_f(&hor_wind);
+    stateSetVerticalWindspeed_f(ver_wind);
+
 //    // set wind speed as environment
-//    if (PF_SET_WIND_NPS_ENV){
-//        nps_atmosphere_set_wind_ned((double)wind_in_ned.x, (double)wind_in_ned.y, (double)wind_in_ned.z);
-//    }
+    if (PF_SET_WIND_NPS_ENV){
+        nps_atmosphere_set_wind_ned((double)wind_vel_v3f.x, (double)wind_vel_v3f.y, (double)wind_vel_v3f.z);
+    }
 }
 
 
