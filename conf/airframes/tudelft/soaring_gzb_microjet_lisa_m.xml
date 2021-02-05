@@ -248,7 +248,7 @@
 
 
     <!-- Energy Control Algorithm -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="15.5"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="16.5"/>
     <!-- <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/> -->
 
       <!--      <define name="ALTITUDE_PGAIN" value="0.18"/>-->
@@ -264,7 +264,7 @@
     <define name="ALTITUDE_MAX_CLIMB" value="3.0"/>
     <define name="GLIDE_RATIO" value="7.0"/>
 
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.00"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.30"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.00"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.00"/>
 
@@ -305,7 +305,7 @@
 
     <define name="COURSE_PRE_BANK_CORRECTION" value="0.98"/>
 
-    <define name="ROLL_MAX_SETPOINT" value="35" unit="deg"/>
+    <define name="ROLL_MAX_SETPOINT" value="20" unit="deg"/>
     <define name="PITCH_MAX_SETPOINT" value="30" unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-30" unit="deg"/>
 

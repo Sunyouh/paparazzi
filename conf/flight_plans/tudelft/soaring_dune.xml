@@ -20,7 +20,7 @@
     <waypoint name="soaring-s" x="0" y="180" height="35"/>
     <waypoint name="soaring-e" x="0" y="200" height="35"/>
     <waypoint name="7" x="0" y="220" height="35"/>
-    <waypoint name="8" x="0" y="300" height="50"/>
+    <waypoint name="8" x="0" y="300" height="55"/>
     <waypoint name="CLIMB" x="0" y="200"/>
     <waypoint name="FOLLOW" x="0" y="180" height="80"/>
     <waypoint name="_FOLLOW2" x="0" y="200" height="80"/>
@@ -94,7 +94,8 @@
       <call_once fun="follow_me_stop()"/>
       <!-- <call_once fun="rl_soaring_stop()"/> -->
 <!--      <circle radius="nav_radius" wp="STDBY" />-->
-      <oval p1="1" p2="8" radius="nav_radius"/>
+      <go wp="8" />
+<!--      <oval p1="1" p2="8" radius="nav_radius"/>-->
     </block>
     <block group="base_pattern" name="Oval 1-8" strip_button="Oval (wp 1-8)" strip_icon="oval.png">
       <oval p1="1" p2="8" radius="nav_radius"/>

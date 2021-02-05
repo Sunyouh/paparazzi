@@ -400,6 +400,7 @@ void follow_me_soar_here(void){
         v_ctl_auto_throttle_nominal_cruise_throttle = 0.0;
         v_ctl_auto_throttle_climb_throttle_increment = 0.1;
 //        v_ctl_auto_throttle_of_airspeed_pgain = 0.2;
+        v_ctl_auto_pitch_of_airspeed_pgain = 0.0;
 	}
 }
 

@@ -272,6 +272,31 @@
       </program>
     </session>
 
+    <session name="Soaring Sim - pf gzb">
+      <program name="Messages"/>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-t" constant="nps"/>
+        <arg flag="--boot"/>
+        <arg flag="--norc"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-center_ac_id" constant="@AC_ID"/>
+        <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="GPSd position display">
+        <arg flag="--ac" constant="@AC_ID"/>
+        <arg flag="--simulate"/>
+      </program>
+      <program name="Gazebo"/>
+    </session>
+
 
     <session name="Soaring Sim - cfd gzb">
       <program name="Messages"/>
@@ -301,7 +326,7 @@
       <!--        <arg flag="-u" constant="1.7"/>-->
       <!--      </program>-->
       <program name="Gazebo"/>
-            <program name="WindDataImporter"/>
+      <program name="WindDataImporter"/>
       <program name="Real-time Plotter">
         <!-- <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>

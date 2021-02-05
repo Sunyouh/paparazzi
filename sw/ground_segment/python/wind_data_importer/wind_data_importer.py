@@ -28,9 +28,6 @@ from wind_importer_cfd import CFDImporter
 import sys
 import signal
 import time
-# import socket
-# import struct
-# import cmath
 import os
 import numpy as np
 
@@ -44,16 +41,23 @@ sys.path.append(PPRZ_HOME + "/var/lib/python")
 from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
-# M_IN_KM = 1000.
-
-# atm = None
-
 
 # scale = np.array([1., 1/M_IN_KM, 1/M_IN_KM, 1/M_IN_KM])
 
+"""
+DEFAULT is ENU
+ANSYS: NWU (sacrificing y axis RIP)
+LTP position(aircraft): NED
+"""
+
+
 class WindDataImporter:
     def __init__(self, args):
-        self.origin = np.array([args.origin_x, args.origin_y, args.origin_z])
+        # self.origin = np.array([args.origin_x, args.origin_y, args.origin_z])
+        self.origin_east = args.origin_x
+        self.origin_north = args.origin_y
+        self.origin_up = args.origin_z
+
         self.cfd_importer = CFDImporter()
         self.cfd_importer.init_importer(args.file, args.inlet_wind_speed_east,
                                         args.inlet_wind_speed_north,
@@ -85,9 +89,7 @@ class WindDataImporter:
 
     # this fn takes ~0.3 ms
     def get_wind(self, east, north, up):
-        loc = np.array([east, north, up])
-        loc = loc - self.origin
-        # print("loc:", loc)
+        loc = np.array([north-self.origin_north, -east+self.origin_east, up-self.origin_up])       # ANSYS North West Up
         weast, wnorth, wup = self.cfd_importer.get_wind(loc)
         # weast, wnorth, wup = np.random.rand()*3, np.random.rand()*3, np.random.rand()*2
         return weast, wnorth, wup
@@ -97,9 +99,6 @@ class WindDataImporter:
             Callback for paparazzi CFD_WIND requests
             the response should be *ENU*
         """
-        # request location (in meters)
-
-        # lat, lon, alt.. & e, n, u (3,4,5)???????????/ ned
         north, east, down = float(msg.get_field(1)), \
                             float(msg.get_field(2)), \
                             float(msg.get_field(3))
@@ -112,17 +111,55 @@ class WindDataImporter:
         weast, wnorth, wup = self.lpf_simple(_weast, _wnorth, _wup)
         self.update_estimation(_weast, _wnorth, _wup)
 
-        # east, north, up = float(msg.get_field(3)), \
-        #                   float(msg.get_field(4)), \
-        #                   float(msg.get_field(5))
-        # weast, wnorth, wup = get_wind(east, north, up)
         msg_back = PprzMessage("datalink", "CFD_WIND_DATA")
         msg_back.set_value_by_name("ac_id", msg.get_field(0))
-        msg_back.set_value_by_name("wind_east", weast)  # TODO
+        msg_back.set_value_by_name("wind_east", weast)
         msg_back.set_value_by_name("wind_north", wnorth)
         msg_back.set_value_by_name("wind_up", wup)
         # ivy.send_raw_datalink(msg_back)
         ivy.send(msg_back)
+
+    def export_wind_field(self):
+        import csv
+
+        x_range = np.arange(0, 160, 0.5)
+        z_range = np.arange(0, 100, 0.5)
+
+        xz_x, xz_z, xz_mag = np.zeros((320, 200)), np.zeros((320, 200)), np.zeros((320, 200))
+
+        csv_f = open('/home/sunyou/cfd_wind_field.csv', 'w')
+
+        u_f = open('/home/sunyou/cfd_x.csv', 'w')
+        u_writer = csv.writer(u_f)
+        v_f = open('/home/sunyou/cfd_z.csv', 'w')
+        v_writer = csv.writer(v_f)
+        # y_f = open('/home/sunyou/cfd_y.csv', 'w')
+        # y_writer = csv.writer(y_f)
+        mag_f = open('/home/sunyou/cfd_mag.csv', 'w')
+        mag_writer = csv.writer(mag_f)
+
+        for i in range(0, len(x_range)):
+            for j in range(0, len(z_range)):
+                _weast, _wnorth, _wup = self.get_wind(0, x_range[i]+self.origin_north, z_range[j])
+
+                if _weast == _wnorth == _wup == 0:
+                    weast, wnorth, wup = 0, 0, 0
+                else:
+                    weast, wnorth, wup = self.lpf_simple(_weast, _wnorth, _wup)
+                    self.update_estimation(_weast, _wnorth, _wup)
+
+                xz_x[i][j] = wnorth
+                xz_z[i][j] = wup
+                xz_mag[i][j] = np.sqrt((wnorth*wnorth+wup*wup))
+
+            u_writer.writerow(xz_x[i])
+            v_writer.writerow(xz_z[i])
+            mag_writer.writerow(xz_mag[i])
+
+        u_f.close()
+        v_f.close()
+        mag_f.close()
+        csv_f.close()
 
 
 def signal_handler(signal, frame):
@@ -167,6 +204,9 @@ def main():
                       default=0.,
                       help="Inlet wind speed (UP), default value is (0, 10, 0) in ENU")
 
+    argp.add_argument("-t", "--is-testing", required=False, type=bool,
+                      default=False, help="Flag for test runs")
+
     args = argp.parse_args()
 
     # register signal handler for ctrl+c to stop the program
@@ -187,6 +227,9 @@ def main():
     # #         importer = PotentialFlowImporter()
     # else:
     #     print("Please specify importer type")
+    if args.is_testing:
+        importer.export_wind_field()
+        return
 
     global ivy
     ivy = IvyMessagesInterface("WindSimulationData")

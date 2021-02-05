@@ -22,6 +22,7 @@
 """
 
 import numpy as np
+from scipy.spatial import KDTree
 import time
 # from scipy import interpolate
 
@@ -39,6 +40,8 @@ class CFDImporter:
         self.x_min, self.x_max, self.y_min, self.y_max, self.z_min, self.z_max = 0, 0, 0, 0, 0, 0
         self.inlet_wind_speed_enu = (0, 0, 0)
         self.inlet_wind_speed_sum = 0
+        self.kd_tree = None
+        self.count = 0
 
     def init_importer(self, f_name, w_e, w_n, w_u):
         print("init importer")
@@ -54,76 +57,43 @@ class CFDImporter:
         print("x: ", self.x_min, self.x_max, ", y: ", self.y_min, self.y_max, ", z: ", self.z_min, self.z_max)
 
     def translate_field(self, x=0, y=0, z=0):
-        # self.cfd_points[0, :] += x
-        # self.cfd_points[1, :] += y
-        # self.cfd_points[2, :] += z
         self.translate_origin += (x, y, z)
 
-    # def interpolate3d(self, x, y, z):
-    #     return self.linear_interpolator(np.array((x, y, z)))
-
-    # def interpolate3d(self, _loc):
-    #     loc = _loc - self.translate_origin
-    #     wind_x = self.interpolator_x(loc)
-    #     wind_y = self.interpolator_y(loc)
-    #     wind_z = self.interpolator_z(loc)
-    #     return wind_x, wind_y, wind_z
-
     def read_csv(self, f_name):
-        csv_data = np.genfromtxt(fname=f_name, delimiter=",", skip_header=5)
-        self.wind_data = np.concatenate((csv_data[1:, :3], csv_data[1:, 4:7]), axis=1)
+        csv_data = np.genfromtxt(fname=f_name, delimiter=",", skip_header=6)
+        _idx = np.where(csv_data[:, 3] > 0)
+        _wind_data = csv_data[_idx]
+        self.wind_data = np.concatenate((_wind_data[:, :3], _wind_data[:, 4:7]), axis=1)
+        self.kd_tree = KDTree(_wind_data[:, :3])
 
     def get_wind(self, loc):
-        # loc: (east, north, up) -> (y, x, z) in NED
+        # ANSYS North West Up
 
-        if not (self.x_min < loc[1] < self.x_max and self.y_min < loc[0] < self.y_max and self.z_min < loc[2] < self.z_max):
-            return self.inlet_wind_speed_enu
+        dist, idx = self.kd_tree.query(loc, distance_upper_bound=3)
 
-        _x_nearest_arr = self.find_nearest(self.wind_data, loc[1], 0)
-        _z_nearest_arr = self.find_nearest(_x_nearest_arr, loc[2], 2)
-        _y_nearest_arr = self.find_nearest(_z_nearest_arr, loc[0], 1)
-        wind_data = list(_y_nearest_arr)[0]
+        wind_east, wind_north, wind_up = 0, 0, 0
+
+        if dist is not np.inf:
+            wind_east = -self.wind_data[idx, 4]
+            wind_north = self.wind_data[idx, 3]
+            wind_up = self.wind_data[idx, 5]
+
         """
         OpenFoam x:North y:West z:Up
         ANSYS: check frame setting
         return *ENU*
         """
-        if (abs(wind_data[3])+abs(wind_data[4])+abs(wind_data[5])) < self.inlet_wind_speed_sum:
-            return (0, 0, 0)
-        # East North Up TODO: is this enu????
-        return (wind_data[4], wind_data[3], wind_data[5])
 
-    def find_nearest(self, arr, value, axis):
-        # print(value, axis)
-        err = np.abs(np.asarray(arr[:, axis]) - value)
-        # err_min = err.min()
-        # print("min_err: ", err_min)
-        idx = np.where(err == err.min())
-        return np.array(arr[idx, :])[0]
+        return wind_east, wind_north, wind_up
 
 
 """
 could do some interpolation... but not the trilinear with all the values
-maybe linear interp btw two nearest points? but it is 3d - how to determine what is the nearest?
 """
 
 
 def main():
     print("This main fn is only for a test")
-    # fname = "/home/sunyou/tud/cfd/export_sample.csv"
-    # importer = CFDImporter()
-    # importer.init_importer(fname)
-    # sum_t = 0
-    #
-    # for i in range(500):
-    #     _t1 = time.time()
-    #     # wind = importer.get_wind((123, -50.5, 150))
-    #     wind = importer.get_wind((np.random.randint(0, 300), np.random.randint(-50, 50), np.random.randint(0, 300)))
-    #     _t2 = time.time()
-    #     sum_t += (_t2 - _t1)*1000
-    #
-    # print(sum_t / 500)
-    # # print(wind)
 
 
 if __name__ == '__main__':

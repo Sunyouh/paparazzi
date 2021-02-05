@@ -72,7 +72,7 @@ using namespace std;
 #endif
 // reference wind velocity: x dir in the obstacle's body frame
 #ifndef PF_REF_WIND_VEL
-#define PF_REF_WIND_VEL -11
+#define PF_REF_WIND_VEL -12
 #endif
 // whether use ground gps or not
 #ifndef PF_USE_GROUND_GPS
