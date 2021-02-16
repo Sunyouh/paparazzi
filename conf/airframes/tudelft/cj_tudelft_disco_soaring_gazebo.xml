@@ -355,7 +355,7 @@
     <!-- --------------------------------------------------------------------------- -->
     
     <!-- Energy Control Algorithm -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="21.0"/>
     <!-- <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/> -->
     <define name="ALTITUDE_PGAIN" value="0.18"/>
     <define name="AIRSPEED_PGAIN" value="0.19"/>  <!--  changed during last flight, was 0.19 -->
@@ -369,14 +369,14 @@
     <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.00"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.0"/>
 
-    <define name="ENERGY_TOT_PGAIN" value="0.0"/>
+    <define name="ENERGY_TOT_PGAIN" value="0.30"/>
     <define name="ENERGY_TOT_IGAIN" value="0.0"/>
     <define name="ENERGY_DIFF_PGAIN" value="0.07"/>
     <define name="ENERGY_DIFF_IGAIN" value="0.02"/>
 
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.9" unit="%/(m/s)"/>
     
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.05"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.35"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.004"/> 
     
   </section>
@@ -495,7 +495,7 @@
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <!-- <define name="SENSORS_PARAMS" value="nps_sensors_params_invariant.h" type="string"/>-->
     <define name="JS_AXIS_MODE" value="4"/>
-    <define name="JSBSIM_LAUNCHSPEED" value="30"/>
+    <define name="JSBSIM_LAUNCHSPEED" value="20"/>
 
     <!--<define name="COMMANDS_NB" value="4"/>-->
     <!--<define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>-->

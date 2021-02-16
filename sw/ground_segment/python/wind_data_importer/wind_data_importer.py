@@ -104,12 +104,13 @@ class WindDataImporter:
                             float(msg.get_field(3))
         _weast, _wnorth, _wup = self.get_wind(east, north, -down)
 
+        weast, wnorth, wup = self.wind_default_x, self.wind_default_y, self.wind_default_z
+
         if _weast == _wnorth == _wup == 0:
             self.initialize_filter()
-            return
-
-        weast, wnorth, wup = self.lpf_simple(_weast, _wnorth, _wup)
-        self.update_estimation(_weast, _wnorth, _wup)
+        else:
+            weast, wnorth, wup = self.lpf_simple(_weast, _wnorth, _wup)
+            self.update_estimation(_weast, _wnorth, _wup)
 
         msg_back = PprzMessage("datalink", "CFD_WIND_DATA")
         msg_back.set_value_by_name("ac_id", msg.get_field(0))
@@ -122,12 +123,21 @@ class WindDataImporter:
     def export_wind_field(self):
         import csv
 
-        x_range = np.arange(0, 160, 0.5)
-        z_range = np.arange(0, 100, 0.5)
+        step_size = 0.5
+        _x_range, _z_range = 260, 100
+        # _x_range, _z_range = 160, 100
+        x_n_steps, z_n_steps = (int)(_x_range/step_size), (int)(_z_range/step_size)
 
-        xz_x, xz_z, xz_mag = np.zeros((320, 200)), np.zeros((320, 200)), np.zeros((320, 200))
+        x_range = np.arange(0, _x_range, step_size)
+        z_range = np.arange(0, _z_range, step_size)
+
+        xz_x, xz_z, xz_mag = np.zeros((z_n_steps, x_n_steps)), np.zeros((z_n_steps, x_n_steps)), np.zeros((z_n_steps, x_n_steps))
 
         csv_f = open('/home/sunyou/cfd_wind_field.csv', 'w')
+        field_names = ['x', 'z', 'v_x', 'v_z', 'v_mag']
+        csv_writer = csv.DictWriter(csv_f, fieldnames=field_names)
+        csv_writer.writeheader()
+        # csv_writer.writerow({'x', 'z', 'v_x', 'v_z', 'v_mag'})
 
         u_f = open('/home/sunyou/cfd_x.csv', 'w')
         u_writer = csv.writer(u_f)
@@ -138,9 +148,14 @@ class WindDataImporter:
         mag_f = open('/home/sunyou/cfd_mag.csv', 'w')
         mag_writer = csv.writer(mag_f)
 
-        for i in range(0, len(x_range)):
-            for j in range(0, len(z_range)):
-                _weast, _wnorth, _wup = self.get_wind(0, x_range[i]+self.origin_north, z_range[j])
+        for i in range(0, len(z_range)):
+            for j in range(0, len(x_range)):
+                _weast, _wnorth, _wup = self.get_wind(0, x_range[j]+self.origin_north, z_range[i])
+
+                # if _weast == _wnorth == _wup == 0:
+                #     self.initialize_filter()
+                #     csv_writer.writerow({'x':i, 'z':j, 'v_x':self.wind_default_x, 'v_z':'0', 'v_mag':'0'})
+                #     continue
 
                 if _weast == _wnorth == _wup == 0:
                     weast, wnorth, wup = 0, 0, 0
@@ -151,7 +166,9 @@ class WindDataImporter:
                 xz_x[i][j] = wnorth
                 xz_z[i][j] = wup
                 xz_mag[i][j] = np.sqrt((wnorth*wnorth+wup*wup))
-
+                # print(i, j, _wnorth, _wup)
+                csv_writer.writerow({'x':x_range[j], 'z':z_range[i], 'v_x':-wnorth, 'v_z':wup, 'v_mag':np.sqrt((wnorth*wnorth+wup*wup))})
+            # print(i)
             u_writer.writerow(xz_x[i])
             v_writer.writerow(xz_z[i])
             mag_writer.writerow(xz_mag[i])
@@ -176,7 +193,7 @@ def main():
                                          "for Paparazzi from CFD or potential flow simulation")
 
     argp.add_argument("-f", "--file", required=False,
-                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_rev_100m_12.csv",
+                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_r_50_12.csv",
                       help="CFD result file path, relative from pprz home")
 
     # argp.add_argument("-t", "--time-step", required=False, type=int,

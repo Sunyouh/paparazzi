@@ -83,9 +83,9 @@ float pitch_enable = 0; // when this y distance is exceeded the pitch PID is ena
 float pitch_disable = 0; // when the y distance is lower the pitch PID is disabled again
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
 //float pitch_pgain = -0.03;
-float pitch_pgain = -0.03;
-float pitch_dgain = 0;
-float pitch_igain = 0.1;
+float pitch_pgain = -0.25;
+float pitch_dgain = 0.1;
+float pitch_igain = 0.02;
 float pitch_sum_err = 0;
 float pitch_limit = 1.047; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float v_ctl_pitch_setpoint_follow_me = 0;
@@ -93,7 +93,7 @@ float v_ctl_pitch_setpoint_follow_me = 0;
 // Throttle loop
 float airspeed_sum_err = 0.0;
 // Should be defined positive
-float airspeed_pgain = 0.4;
+float airspeed_pgain = 0.2;
 float airspeed_igain = 0.10;
 float airspeed_dgain = 0.10;
 
@@ -398,9 +398,13 @@ void follow_me_soar_here(void){
 
 		// set throttle gains
         v_ctl_auto_throttle_nominal_cruise_throttle = 0.0;
-        v_ctl_auto_throttle_climb_throttle_increment = 0.1;
+        v_ctl_auto_throttle_climb_throttle_increment = 0.01;
 //        v_ctl_auto_throttle_of_airspeed_pgain = 0.2;
         v_ctl_auto_pitch_of_airspeed_pgain = 0.0;
+//        v_ctl_auto_throttle_nominal_cruise_pitch = 0.0;
+
+        // Hotfix for a bug with the airspeed setpoint calculation
+        airspeed_sum_err = 0;
 	}
 }
 
@@ -602,7 +606,12 @@ void follow_me_throttle_loop(void){
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err - (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
 	// Add airspeed inc to average airspeed
-	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f() + airspeed_inc)+0.5;
+    v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f() + airspeed_inc);
+//    v_ctl_auto_airspeed_setpoint = stateGetAirspeed_f()+0.5;
+
+//	printf("\n");
+//	printf("dist_wp_follow.y: %f, airspeed_sum_err: %f\n", dist_wp_follow.y, airspeed_sum_err);
+//	printf("airspeed_inc: %f, state_airspeed: %f, v_ctl_auto_airspeed: %f\n", airspeed_inc, stateGetAirspeed_f(), v_ctl_auto_airspeed_setpoint);
 
 	if (v_ctl_auto_airspeed_setpoint < 9){
 		v_ctl_auto_airspeed_setpoint = 9;

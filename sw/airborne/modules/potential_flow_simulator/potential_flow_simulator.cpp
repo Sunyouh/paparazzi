@@ -46,7 +46,7 @@ using namespace std;
 
 // define radius of the obstacle - TODO: building and boat?
 #ifndef PF_OBSTACLE_RADIUS
-#define PF_OBSTACLE_RADIUS 20
+#define PF_OBSTACLE_RADIUS 50
 #endif
 // surface roughness
 #ifndef PF_SURFACE_ROUGHNESS
@@ -62,7 +62,7 @@ using namespace std;
 #define PF_OBSTACLE_TYPE 1
 #endif
 #ifndef PF_OBSTACLE_POSITION_X
-#define PF_OBSTACLE_POSITION_X 180
+#define PF_OBSTACLE_POSITION_X 230
 #endif
 #ifndef PF_OBSTACLE_POSITION_Y
 #define PF_OBSTACLE_POSITION_Y 0
@@ -72,7 +72,7 @@ using namespace std;
 #endif
 // reference wind velocity: x dir in the obstacle's body frame
 #ifndef PF_REF_WIND_VEL
-#define PF_REF_WIND_VEL -12
+#define PF_REF_WIND_VEL -13
 #endif
 // whether use ground gps or not
 #ifndef PF_USE_GROUND_GPS
@@ -256,7 +256,7 @@ void potential_flow_simulator_periodic(void)
     rel_dist.y = PF_OBSTACLE_POSITION_Y - ltp_vehicle_pos->y;
     rel_dist.z = PF_OBSTACLE_POSITION_Z - ltp_vehicle_pos->z;
 
-    cout << "dist: " << rel_dist.x << ", " << rel_dist.y << ", " << rel_dist.z << endl;
+//    cout << "dist: " << rel_dist.x << ", " << rel_dist.y << ", " << rel_dist.z << endl;
 
     /// potential flow calculation: obstacle's body frame; wind velocity (x, z) and reference wind vel (x dir)
     struct FloatVect3 wind_vel_v3f = compute_potential_flow(rel_dist, PF_REF_WIND_VEL);
@@ -271,8 +271,8 @@ void potential_flow_simulator_periodic(void)
 
     float ver_wind = wind_vel_v3f.z;
 
-    cout << "wind: " << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
-    cout << endl;
+//    cout << "wind: " << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
+//    cout << endl;
 
 //    // Set wind speed (state)
     stateSetHorizontalWindspeed_f(&hor_wind);

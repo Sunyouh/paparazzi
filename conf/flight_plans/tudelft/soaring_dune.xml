@@ -4,7 +4,7 @@
   Mondorf lat0="49.512248" lon0="6.279989"
   Valkenburg lat0="52.1681543" lon0="4.4125881" 
    Zoutelande lat0="51.495227" lon0="3.495218"-->
-<flight_plan alt="10" ground_alt="0" lat0="51.495227" lon0="3.495218" max_dist_from_home="20000" qfu="0" name="Never Landing Drone" security_height="50">
+<flight_plan alt="10" ground_alt="0" lat0="51.495227" lon0="3.495218" max_dist_from_home="20000" qfu="0" name="Never Landing Drone" security_height="70">
 
 <header>
 #include "subsystems/datalink/datalink.h"
@@ -13,15 +13,16 @@
     <!--  FOLLOW = 3 / AF = 5 / TD = 6 / FLARE = 7 -->
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="STDBY" x="0" y="-50" height="100"/>
-    <waypoint name="1" x="0" y="-100" height="60"/>
+    <waypoint name="00" x="0" y="-100" height="80"/>
+    <waypoint name="1" x="0" y="-100" height="80"/>
     <waypoint name="2" x="0" y="100" height="70"/>
-    <waypoint name="3" x="0" y="130" height="35"/>
-    <waypoint name="4" x="0" y="160" height="35"/>
-    <waypoint name="soaring-s" x="0" y="180" height="35"/>
-    <waypoint name="soaring-e" x="0" y="200" height="35"/>
-    <waypoint name="7" x="0" y="220" height="35"/>
-    <waypoint name="8" x="0" y="300" height="55"/>
-    <waypoint name="CLIMB" x="0" y="200"/>
+    <waypoint name="3" x="0" y="130" height="70"/>
+    <waypoint name="4" x="0" y="160" height="70"/>
+    <waypoint name="soaring-s" x="0" y="230" height="80"/>
+    <waypoint name="soaring-e" x="0" y="280" height="70"/>
+<!--    <waypoint name="7" x="0" y="220" height="70"/>-->
+    <waypoint name="8" x="0" y="300" height="80"/>
+    <waypoint name="CLIMB" x="0" y="200" height="100"/>
     <waypoint name="FOLLOW" x="0" y="180" height="80"/>
     <waypoint name="_FOLLOW2" x="0" y="200" height="80"/>
     <waypoint name="AF" x="0" y="-50" height="70"/> <!--  Start of landing procedure -->
@@ -93,9 +94,16 @@
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="tuning">
       <call_once fun="follow_me_stop()"/>
       <!-- <call_once fun="rl_soaring_stop()"/> -->
-<!--      <circle radius="nav_radius" wp="STDBY" />-->
+<!--      <circle radius="nav_radius" wp="00" />-->
+<!--      <go wp="soaring-s" />-->
+<!--      <go wp="soaring-e" />-->
+<!--      <go wp="8" />-->
+      <oval p1="1" p2="8" radius="nav_radius"/>
+    </block>
+    <block name="goto_soaring">
+      <go wp="soaring-s" />
+      <go wp="soaring-e" />
       <go wp="8" />
-<!--      <oval p1="1" p2="8" radius="nav_radius"/>-->
     </block>
     <block group="base_pattern" name="Oval 1-8" strip_button="Oval (wp 1-8)" strip_icon="oval.png">
       <oval p1="1" p2="8" radius="nav_radius"/>
