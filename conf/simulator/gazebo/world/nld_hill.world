@@ -23,5 +23,12 @@
         </visual>
       </link>
     </model>
+    <scene>
+      <sky>
+        <clouds>
+          <speed>12</speed>
+        </clouds>
+      </sky>
+    </scene>
   </world>
 </sdf>
