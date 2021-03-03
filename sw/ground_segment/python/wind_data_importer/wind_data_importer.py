@@ -68,6 +68,10 @@ class WindDataImporter:
         self.wind_prev_x, self.wind_prev_y, self.wind_prev_z = self.wind_default_x, self.wind_default_y, self.wind_default_z
         self.filter_initialized = True
 
+        if args.set_waypoint:
+            x_min, x_max = self.cfd_importer.get_soaring_region()
+            print(x_min, x_max)
+
     # a simple low pass filter
     def lpf_simple(self, wind_x, wind_y, wind_z, alpha=0.5):
         # if self.filter_initialized:
@@ -193,7 +197,7 @@ def main():
                                          "for Paparazzi from CFD or potential flow simulation")
 
     argp.add_argument("-f", "--file", required=False,
-                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_r_50_12.csv",
+                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_r_50_13.csv",
                       help="CFD result file path, relative from pprz home")
 
     # argp.add_argument("-t", "--time-step", required=False, type=int,
@@ -221,8 +225,11 @@ def main():
                       default=0.,
                       help="Inlet wind speed (UP), default value is (0, 10, 0) in ENU")
 
-    argp.add_argument("-t", "--is-testing", required=False, type=bool,
-                      default=False, help="Flag for test runs")
+    argp.add_argument("-e", "--export", required=False, type=bool,
+                      default=False, help="Flag for exporting wind field")
+
+    argp.add_argument("-wp", "--set-waypoint", required=False, type=bool,
+                      default=True, help="Set soaring waypoints")
 
     args = argp.parse_args()
 
@@ -244,7 +251,7 @@ def main():
     # #         importer = PotentialFlowImporter()
     # else:
     #     print("Please specify importer type")
-    if args.is_testing:
+    if args.export:
         importer.export_wind_field()
         return
 

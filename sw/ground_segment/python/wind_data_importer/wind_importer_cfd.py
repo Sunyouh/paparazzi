@@ -63,7 +63,8 @@ class CFDImporter:
         csv_data = np.genfromtxt(fname=f_name, delimiter=",", skip_header=6)
         _idx = np.where(csv_data[:, 3] > 0)
         _wind_data = csv_data[_idx]
-        self.wind_data = np.concatenate((_wind_data[:, :3], _wind_data[:, 4:7]), axis=1)
+        self.wind_data = np.concatenate((_wind_data[:, :3], _wind_data[:, 3:7]), axis=1)
+        # self.wind_data = _wind_data
         self.kd_tree = KDTree(_wind_data[:, :3])
 
     def get_wind(self, loc):
@@ -74,9 +75,9 @@ class CFDImporter:
         wind_east, wind_north, wind_up = 0, 0, 0
 
         if dist is not np.inf:
-            wind_east = -self.wind_data[idx, 4]
-            wind_north = self.wind_data[idx, 3]
-            wind_up = self.wind_data[idx, 5]
+            wind_east = -self.wind_data[idx, 5]
+            wind_north = self.wind_data[idx, 4]
+            wind_up = self.wind_data[idx, 6]
 
         """
         OpenFoam x:North y:West z:Up
@@ -85,6 +86,120 @@ class CFDImporter:
         """
 
         return wind_east, wind_north, wind_up
+
+    def get_soaring_region(self, p_threshold=10, alt_low=75, alt_high=80):
+        m = 0.907  # mass, in kg
+
+        S = 0.4234  # Wing surface area, in m^2
+        rho = 1.225  # Air density, in kg/m^3
+        g = 9.80665  # gtavitational acceleration, in m/s^2
+        CL_alpha = 5  # Lift coefficient slope, in 1/rad
+        alpha_0L = 0.05  # Zero lift angle of attack, in degrees
+        AR = 8.8847  # Aspect ratio
+        e = 0.8  # Oswald efficiency factor
+        CD_0 = 0.028  # Zero-lift drag coefficient
+
+        # Specific turbine disc area: S_turb_spec = S_turb_disc / S
+        S_turb_spec = 0.36  # 0.006 for smallest point at gridsize of 0.1
+        W = m * g
+        Cdi_coef = 1. / (np.pi * AR * e)  # 1/pi*A*e
+
+        # xpoints = cfd_data[:, 0]
+        # zpoints = cfd_data[:, 1]
+
+        x_points = self.wind_data[:, 0]
+        z_points = self.wind_data[:, 2]
+
+        # cfd_wind_u = cfd_data[:, 2]
+        # cfd_wind_v = cfd_data[:, 3]
+        # cfd_wind_mag = cfd_data[:, 4]
+
+        cfd_wind_north = self.wind_data[:, 4]
+        cfd_wind_up = self.wind_data[:, 6]
+        cfd_wind_mag = self.wind_data[:, 3]
+        # print(cfd_wind_mag)
+
+        # pf_wind_u = pf_data[:, 2]
+        # pf_wind_v = pf_data[:, 3]
+        # pf_wind_mag = pf_data[:, 4]
+
+        def get_local_min_h_dot(V_loc):
+            min_h_dot = (rho * S * CD_0) / (2. * m * g) * V_loc ** 3 + (2. * m * g * Cdi_coef) / (rho * S * V_loc)
+            return min_h_dot
+
+        def calc_eq(wind_mag, wind_u, wind_v):
+            # This function calculates the
+            C_L_req = W / (0.5 * rho * np.power(wind_mag, 2) * S) * (np.abs(wind_u) / wind_mag)
+            C_D_req = W / (0.5 * rho * np.power(wind_mag, 2) * S) * (np.abs(wind_v) / wind_mag)
+
+            # drag_turb_func = get_turbine_params()
+
+            C_D_min_ach = CD_0 + np.power(C_L_req, 2) * Cdi_coef
+            C_D_max_ach = C_D_min_ach + 1. * (2. / 9) * S_turb_spec
+            # drag_turb_func(wind_mag)/(0.5* rho * np.power(wind_mag, 2) * S)#1*(2/9)*S_turb_spec
+
+            C_D_turb = C_D_req - C_D_min_ach
+
+            # D_turb = 0.5 * rho * np.power(wind_mag, 2) * S * C_D_turb
+
+            alpha = C_L_req / CL_alpha + alpha_0L
+
+            stall = (alpha > np.deg2rad(15)) & (alpha < np.deg2rad(-10))
+            C_L_req[stall] = np.nan
+            C_D_req[stall] = np.nan
+            C_D_min_ach[stall] = np.nan
+            C_D_max_ach[stall] = np.nan
+            # alpha[stall] = np.nan
+
+            eq_points = np.where((C_D_req <= C_D_min_ach) | (C_D_req >= C_D_max_ach))
+            P_turb = 0.5 * rho * S * np.power(wind_mag, 3) * C_D_turb
+            P_turb[eq_points] = np.nan
+            # alpha[eq_points] = np.nan
+            # D_turb[eq_points] = np.nan
+
+            # v_mask = np.where(wind_v < 0)
+            # P_turb[v_mask] = np.nan
+            # P_turb[v_mask] = -1
+
+            # P_turbs = np.ma.masked_where(wind_v <= get_local_min_h_dot(wind_mag), P_turb)  # changed to P_maxs
+            p_idx = np.where((wind_v < 0) | (wind_v <= get_local_min_h_dot(wind_mag)))
+            P_turb[p_idx] = -1
+            # P_turb_max = np.nanmax(P_turbs)
+            # P_turbs = np.nan_to_num(P_turbs, nan=-1)
+            P_turbs = [-1 if np.isnan(x) else x for x in P_turb]
+
+            # return P_turb, np.rad2deg(alpha), D_turb
+            return np.array(P_turbs)
+
+        # P_turbs, alphas_eq, D_turb = calc_eq()
+        # P_turbs = np.ma.masked_where(wind_v <= get_local_min_h_dot(wind_mag), P_turbs)  # changed to P_maxs
+        # P_turb_max = np.nanmax(P_turbs)
+        # min_p = np.nanmin(P_turbs)
+        # print("max P_turb:", P_turb_max)
+        # print("min: ", min_p)
+        # # 5 * round(P_turb_max/5)+0.1
+        # D_turbs = np.ma.masked_where(wind_v <= get_local_min_h_dot(wind_mag), D_turb)
+        # print(P_turbs)
+
+        cfd_p_turbs = calc_eq(cfd_wind_mag, cfd_wind_north, cfd_wind_up)
+        # pf_p_turbs = calc_eq(pf_wind_mag, pf_wind_u, pf_wind_v)
+
+        # print(cfd_p_turbs.shape)
+        # print(cfd_p_turbs.tolist())
+        # print(pf_p_turbs.shape)
+
+        alt_index = np.where((z_points > alt_low) & (z_points < alt_high))
+        over_thres_idx = np.where((cfd_p_turbs is not None) & (cfd_p_turbs > p_threshold))
+        overlap = np.intersect1d(over_thres_idx, alt_index)
+        x_overlap = x_points[overlap]
+        # print(x_overlap, len(x_overlap))
+        if len(x_overlap) == 0:
+            return 0, 0
+
+        x_min = np.nanmin(x_overlap)
+        x_max = np.nanmax(x_overlap)
+
+        return x_min, x_max
 
 
 """
