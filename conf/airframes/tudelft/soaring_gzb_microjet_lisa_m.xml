@@ -29,6 +29,8 @@
         <module name="logger_file">
             <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi/log/"/>
         </module>
+        <define name="SIM" value="1"/>
+        <define name="NLD_SOARING" value="1"/>
     </target>
 <!--    <target name="ap"   board="lisa_m_2.0">-->
 <!--      &lt;!&ndash; baro board options for Lisa/M 2.0: BARO_BOARD_BMP085, BARO_MS5611_I2C, BARO_MS5611_SPI (default) &ndash;&gt;-->

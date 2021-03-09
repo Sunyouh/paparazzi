@@ -153,7 +153,7 @@ static void file_logger_write_row(FILE *file) {
 #ifdef SIM
   // TODO: modify - wind speed
   fprintf(file, ",%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f",
-                , nps_atmosphere.wind.x, nps_atmosphere.wind.y, nps_atmosphere.wind.z,
+                nps_atmosphere.wind.x, nps_atmosphere.wind.y, nps_atmosphere.wind.z,
 #else
   //
   fprintf(file_logger, ",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f",
@@ -203,8 +203,9 @@ static void file_logger_write_row(FILE *file) {
             stationary_ground, //uint8_t 43
             throttle // 44
             );
-    fprintf(file, "\n");
 #endif
+    fprintf(file, "\n");
+
 }
 //void file_logger_periodic(void)
 //{
