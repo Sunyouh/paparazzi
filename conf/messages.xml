@@ -2594,6 +2594,17 @@
           <field name="wind_up" type="float" unit="m/s"/>
       </message>
 
+      <message name="MOVE_WAYPOINT_LTP" id="61" link="forwarded">
+          <description>
+              send info for WP to move in LTP
+          </description>
+          <field name="ac_id" type="uint8"/>
+          <field name="wp_id" type="uint8"/>
+          <field name="ltp_x" type="float" unit="m" />
+          <field name="ltp_y" type="float" unit="m" />
+          <field name="ltp_z" type="float" unit="m" />
+      </message>
+
     <message name="KITE_COMMAND" id="96">
       <field name="POWER"     type="uint16"/>
       <field name="TURN"      type="uint16"/>

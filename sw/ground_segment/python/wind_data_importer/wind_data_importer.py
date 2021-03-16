@@ -67,9 +67,11 @@ class WindDataImporter:
         self.wind_default_z = args.inlet_wind_speed_up
         self.wind_prev_x, self.wind_prev_y, self.wind_prev_z = self.wind_default_x, self.wind_default_y, self.wind_default_z
         self.filter_initialized = True
+        self.target_altitude = args.target_altitude
 
         if args.set_waypoint:
-            x_min, x_max = self.cfd_importer.get_soaring_region()
+            x_min, x_max = self.cfd_importer.get_soaring_region(self.target_altitude)
+            self.send_wp_msg(x_min, x_max, self.target_altitude, args.ac_id)
             print(x_min, x_max)
 
     # a simple low pass filter
@@ -91,7 +93,6 @@ class WindDataImporter:
         self.wind_prev_y = self.wind_default_y
         self.wind_prev_z = self.wind_default_z
 
-    # this fn takes ~0.3 ms
     def get_wind(self, east, north, up):
         loc = np.array([north-self.origin_north, -east+self.origin_east, up-self.origin_up])       # ANSYS North West Up
         weast, wnorth, wup = self.cfd_importer.get_wind(loc)
@@ -123,6 +124,31 @@ class WindDataImporter:
         msg_back.set_value_by_name("wind_up", wup)
         # ivy.send_raw_datalink(msg_back)
         ivy.send(msg_back)
+
+    def send_wp_msg(self, x_min, x_max, alt, ac_id, wp_east=0):
+        msg_1 = PprzMessage("datalink", "MOVE_WAYPOINT_LTP")
+        msg_1.set_value_by_name("ac_id", ac_id)
+        msg_1.set_value_by_name("wp_id", 3)
+        msg_1.set_value_by_name("ltp_x", x_min+self.origin_north)
+        msg_1.set_value_by_name("ltp_y", wp_east+self.origin_east)
+        msg_1.set_value_by_name("ltp_z", -(alt+self.origin_up))
+        ivy.send(msg_1)
+
+        msg_2 = PprzMessage("datalink", "MOVE_WAYPOINT_LTP")
+        msg_2.set_value_by_name("ac_id", ac_id)
+        msg_2.set_value_by_name("wp_id", 4)
+        msg_2.set_value_by_name("ltp_x", (x_min+x_max)/2.+self.origin_north)
+        msg_2.set_value_by_name("ltp_y", wp_east+self.origin_east)
+        msg_2.set_value_by_name("ltp_z", -(alt+self.origin_up))
+        ivy.send(msg_2)
+
+        msg_3 = PprzMessage("datalink", "MOVE_WAYPOINT_LTP")
+        msg_3.set_value_by_name("ac_id", ac_id)
+        msg_3.set_value_by_name("wp_id", 5)
+        msg_3.set_value_by_name("ltp_x", x_max+self.origin_north)
+        msg_3.set_value_by_name("ltp_y", wp_east+self.origin_east)
+        msg_3.set_value_by_name("ltp_z", -(alt+self.origin_up))
+        ivy.send(msg_3)
 
     def export_wind_field(self):
         import csv
@@ -231,10 +257,20 @@ def main():
     argp.add_argument("-wp", "--set-waypoint", required=False, type=bool,
                       default=True, help="Set soaring waypoints")
 
+    argp.add_argument("-alt", "--target-altitude", required=False, type=float,
+                      default=70, help="Soaring WP altitude")
+
+    argp.add_argument("-ac", "--ac_id", required=False, type=int,
+                      default=8, help="AC_ID")
+
     args = argp.parse_args()
 
     # register signal handler for ctrl+c to stop the program
     signal.signal(signal.SIGINT, signal_handler)
+
+    global ivy
+    ivy = IvyMessagesInterface("WindSimulationData")
+    # ivy.subscribe(cfd_wind_cb, '(.* CFD_WIND_REQ .*)')
 
     importer = WindDataImporter(args)
 
@@ -255,9 +291,6 @@ def main():
         importer.export_wind_field()
         return
 
-    global ivy
-    ivy = IvyMessagesInterface("WindSimulationData")
-    # ivy.subscribe(cfd_wind_cb, '(.* CFD_WIND_REQ .*)')
     ivy.subscribe(importer.cfd_wind_cb, '(.* LTP_POSITION .*)')
 
     # wait for ivy to stop

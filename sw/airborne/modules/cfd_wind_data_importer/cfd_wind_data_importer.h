@@ -32,5 +32,6 @@ extern void init_cfd_wind_data_importer(void);
 //extern void init_cfd_wind_data_importer_ivy(void);
 extern void cfd_wind_data_importer_periodic(void);
 extern void cfd_wind_importer_parse_wind_msg(uint8_t *buf);
+extern void cfd_wind_importer_move_waypoint_msg_cb(uint8_t *buf);
 
 #endif  // CFD_WIND_DATA_IMPORTER_H

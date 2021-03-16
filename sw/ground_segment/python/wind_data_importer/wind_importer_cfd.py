@@ -87,7 +87,7 @@ class CFDImporter:
 
         return wind_east, wind_north, wind_up
 
-    def get_soaring_region(self, p_threshold=10, alt_low=75, alt_high=80):
+    def get_soaring_region(self, target_alt, p_threshold=10):
         m = 0.907  # mass, in kg
 
         S = 0.4234  # Wing surface area, in m^2
@@ -104,24 +104,16 @@ class CFDImporter:
         W = m * g
         Cdi_coef = 1. / (np.pi * AR * e)  # 1/pi*A*e
 
-        # xpoints = cfd_data[:, 0]
-        # zpoints = cfd_data[:, 1]
+        # TODO: get rid of hardcoded params
+
+        alt_low, alt_high = target_alt-3, target_alt+3
 
         x_points = self.wind_data[:, 0]
         z_points = self.wind_data[:, 2]
 
-        # cfd_wind_u = cfd_data[:, 2]
-        # cfd_wind_v = cfd_data[:, 3]
-        # cfd_wind_mag = cfd_data[:, 4]
-
         cfd_wind_north = self.wind_data[:, 4]
         cfd_wind_up = self.wind_data[:, 6]
         cfd_wind_mag = self.wind_data[:, 3]
-        # print(cfd_wind_mag)
-
-        # pf_wind_u = pf_data[:, 2]
-        # pf_wind_v = pf_data[:, 3]
-        # pf_wind_mag = pf_data[:, 4]
 
         def get_local_min_h_dot(V_loc):
             min_h_dot = (rho * S * CD_0) / (2. * m * g) * V_loc ** 3 + (2. * m * g * Cdi_coef) / (rho * S * V_loc)
@@ -175,18 +167,11 @@ class CFDImporter:
         # P_turbs = np.ma.masked_where(wind_v <= get_local_min_h_dot(wind_mag), P_turbs)  # changed to P_maxs
         # P_turb_max = np.nanmax(P_turbs)
         # min_p = np.nanmin(P_turbs)
-        # print("max P_turb:", P_turb_max)
-        # print("min: ", min_p)
         # # 5 * round(P_turb_max/5)+0.1
         # D_turbs = np.ma.masked_where(wind_v <= get_local_min_h_dot(wind_mag), D_turb)
-        # print(P_turbs)
 
         cfd_p_turbs = calc_eq(cfd_wind_mag, cfd_wind_north, cfd_wind_up)
         # pf_p_turbs = calc_eq(pf_wind_mag, pf_wind_u, pf_wind_v)
-
-        # print(cfd_p_turbs.shape)
-        # print(cfd_p_turbs.tolist())
-        # print(pf_p_turbs.shape)
 
         alt_index = np.where((z_points > alt_low) & (z_points < alt_high))
         over_thres_idx = np.where((cfd_p_turbs is not None) & (cfd_p_turbs > p_threshold))

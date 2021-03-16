@@ -88,8 +88,6 @@
 
     <!-- all targets -->
 
-<!--    <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
-
 <!--    <define name="AGR_CLIMB"/>-->
 <!--    <define name="LOITER_TRIM"/>-->
 <!--    <define name="STRONG_WIND"/>-->

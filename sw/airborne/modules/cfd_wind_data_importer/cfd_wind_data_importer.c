@@ -18,7 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/world_env_req_sender/world_env_req_sender.c"
+/** @file "modules/cfd_wind_data_importer/cfd_wind_data_importer.c"
  * @author Sunyou Hwang <S.Hwang-1@tudelft.nl>
  * Sending IVY request to import CFD wind data periodically
  */
@@ -29,15 +29,11 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 //#include <sys/types.h>
-//#include <unistd.h>
-
-//#include <Ivy/ivy.h>
-//#include <Ivy/ivyglibloop.h>
-//#include <Ivy/ivyloop.h>
 
 //#include <pthread.h>
-//
+
 //#include "generated/airframe.h"
 //#include "math/pprz_algebra_float.h"
 //#include "math/pprz_algebra_double.h"
@@ -46,6 +42,7 @@
 #include "nps_fdm.h"
 //#include "nps_sensors.h"
 #include "nps_atmosphere.h"
+#include "state.h"
 
 //#include "generated/modules.h"
 //#include "generated/settings.h"
@@ -54,28 +51,11 @@
 #include "subsystems/datalink/telemetry.h"
 //#include "subsystems/abi.h"
 
+#include "math/pprz_geodetic_float.h"
+
 //static MsgRcvPtr ivyPtr = NULL;
 //static int seq = 1;
 //static int init_ivy = 1;
-
-//static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
-//                         void *user_data __attribute__((unused)),
-//                         int argc __attribute__((unused)), char *argv[]);
-//
-//
-//static void on_CFD_WIND(IvyClientPtr app __attribute__((unused)),
-//                         void *user_data __attribute__((unused)),
-//                         int argc __attribute__((unused)), char *argv[])
-//{
-//    // wind speed in m/s
-//    struct FloatVect3 wind;
-//    wind.x = atof(argv[1]); //east
-//    wind.y = atof(argv[2]); //north
-//    wind.z = atof(argv[3]); //up
-//
-//    /* set wind speed in NED */
-//    nps_atmosphere_set_wind_ned(wind.y, wind.x, -wind.z);
-//}
 
 static void cfd_wind_importer_send_position(void)
 {
@@ -146,6 +126,31 @@ void cfd_wind_importer_parse_wind_msg(uint8_t *buf)
 
     /* set wind speed in NED */
     nps_atmosphere_set_wind_ned(wind.y, wind.x, -wind.z);
+}
+
+void cfd_wind_importer_move_waypoint_msg_cb(uint8_t *buf)
+{
+    // receive ltp position
+    int wp_id;
+    struct NedCoor_f ltp_pos;
+
+    wp_id = DL_MOVE_WAYPOINT_LTP_wp_id(buf);
+    ltp_pos.x = DL_MOVE_WAYPOINT_LTP_ltp_x(buf);
+    ltp_pos.y = DL_MOVE_WAYPOINT_LTP_ltp_y(buf);
+    ltp_pos.z = DL_MOVE_WAYPOINT_LTP_ltp_z(buf);
+
+    printf("%d: %f, %f, %f, move wp\n", wp_id, ltp_pos.x, ltp_pos.y, ltp_pos.z);
+
+    struct UtmCoor_f pos_utm;
+
+    if(!state.utm_initialized_f){
+        printf("utm origin not initialized\n");
+        return;
+    }
+    UTM_OF_NED_ADD(pos_utm, ltp_pos, state.utm_origin_f);
+    printf("moved wp %d utm: %f, %f, %f\n", wp_id, pos_utm.east, pos_utm.north, pos_utm.alt);
+
+    nav_move_waypoint(wp_id, pos_utm.east, pos_utm.north, pos_utm.alt);
 }
 
 
@@ -300,5 +305,7 @@ void cfd_wind_data_importer_periodic(void)
   // your periodic code here.
 //    ivy_send_CFD_WIND_REQ();
     cfd_wind_importer_send_position();
+//    printf("init: %d, %d, %d\n", state.ned_initialized_i, state.ned_initialized_f, state.utm_initialized_f);
+
 }
 

@@ -9,8 +9,10 @@
     <file name="cfd_wind_data_importer.h"/>
   </header>
   <init fun="init_cfd_wind_data_importer()"/>
-  <periodic fun="cfd_wind_data_importer_periodic()" freq="60" autorun="TRUE"/>
+  <periodic fun="cfd_wind_data_importer_periodic()" freq="30" autorun="TRUE"/>
   <datalink message="CFD_WIND_DATA" fun="cfd_wind_importer_parse_wind_msg(buf)"/>
+  <datalink message="MOVE_WAYPOINT_LTP" fun="cfd_wind_importer_move_waypoint_msg_cb(buf)"/>
+
   <makefile>
     <file name="cfd_wind_data_importer.c"/>
   </makefile>
