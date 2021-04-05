@@ -84,8 +84,8 @@ float pitch_disable = 0; // when the y distance is lower the pitch PID is disabl
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
 //float pitch_pgain = -0.03;
 float pitch_pgain = -0.25;
-float pitch_dgain = 0.1;
-float pitch_igain = 0.02;
+float pitch_dgain = 0.0;
+float pitch_igain = 0.01;
 float pitch_sum_err = 0;
 float pitch_limit = 1.047; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float v_ctl_pitch_setpoint_follow_me = 0;
@@ -94,8 +94,8 @@ float v_ctl_pitch_setpoint_follow_me = 0;
 float airspeed_sum_err = 0.0;
 // Should be defined positive
 float airspeed_pgain = 0.2;
-float airspeed_igain = 0.10;
-float airspeed_dgain = 0.10;
+float airspeed_igain = 0.0;
+float airspeed_dgain = 0.0;
 
 // Keep track of current position with respect of waypoint
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
@@ -392,19 +392,24 @@ void follow_me_soar_here(void){
         v_ctl_auto_airspeed_setpoint = current_airspeed;
 
 		struct FloatVect3 state_in_boat_frame = compute_state();
-		follow_me_distance = state_in_boat_frame.y;
+		follow_me_distance = state_in_boat_frame.y+10;
 		follow_me_distance_2 = follow_me_distance + 30;
 		lateral_offset = state_in_boat_frame.x;
 
-		// set throttle gains
+        // set throttle gains (TECS)
         v_ctl_auto_throttle_nominal_cruise_throttle = 0.0;
-        v_ctl_auto_throttle_climb_throttle_increment = 0.01;
-//        v_ctl_auto_throttle_of_airspeed_pgain = 0.2;
-        v_ctl_auto_pitch_of_airspeed_pgain = 0.0;
+        v_ctl_auto_throttle_climb_throttle_increment = 0.0;
+        v_ctl_energy_total_pgain = 0.0;
+        v_ctl_auto_throttle_of_airspeed_pgain = 0.0;
+        v_ctl_auto_pitch_of_airspeed_dgain = 0.0;
 //        v_ctl_auto_throttle_nominal_cruise_pitch = 0.0;
+        v_ctl_auto_pitch_of_airspeed_pgain = 0.05;
+        v_ctl_auto_pitch_of_airspeed_dgain = 0.0;
+
+        v_ctl_altitude_pgain = 0.3;
 
         // Hotfix for a bug with the airspeed setpoint calculation
-        airspeed_sum_err = 0;
+//        airspeed_sum_err = 0;
 	}
 }
 

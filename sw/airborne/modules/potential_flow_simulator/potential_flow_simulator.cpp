@@ -72,7 +72,7 @@ using namespace std;
 #endif
 // reference wind velocity: x dir in the obstacle's body frame
 #ifndef PF_REF_WIND_VEL
-#define PF_REF_WIND_VEL -13
+#define PF_REF_WIND_VEL -12
 #endif
 // whether use ground gps or not
 #ifndef PF_USE_GROUND_GPS
@@ -270,6 +270,7 @@ void potential_flow_simulator_periodic(void)
     hor_wind.y = wind_vel_v3f.y;
 
     float ver_wind = wind_vel_v3f.z;
+    if(ver_wind > 1.0) { ver_wind = 1.0; }
 
 //    cout << "wind: " << hor_wind.x << ", " << hor_wind.y << ", " << ver_wind << endl;
 //    cout << endl;
@@ -280,7 +281,7 @@ void potential_flow_simulator_periodic(void)
 
 //    // set wind speed as environment
     if (PF_SET_WIND_NPS_ENV){
-        nps_atmosphere_set_wind_ned((double)wind_vel_v3f.x, (double)wind_vel_v3f.y, (double)wind_vel_v3f.z);
+        nps_atmosphere_set_wind_ned((double)wind_vel_v3f.x, (double)wind_vel_v3f.y, (double)ver_wind);
     }
 }
 

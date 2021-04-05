@@ -18,10 +18,10 @@
         <define name="NPS_GAZEBO_SCALE" value="1" type="float" />
         <!--<define name="NPS_SIMULATE_VIDEO" value="1"/>-->
       </module>
-<!--      <module name="potential_flow_simulator">-->
-<!--        <define name="PF_SET_WIND_NPS_ENV" value="1" type="int"/>-->
-<!--      </module>-->
-      <module name="cfd_wind_data_importer"/>
+      <module name="potential_flow_simulator">
+        <define name="PF_SET_WIND_NPS_ENV" value="1" type="int"/>
+      </module>
+<!--      <module name="cfd_wind_data_importer"/>-->
       <module name="imu" type="nps"/>
 <!--      <module name="ins" type="alt_float"/>-->
 <!--      <module name="telemetry" type="transparent_udp"/>-->
@@ -31,6 +31,7 @@
         </module>
         <define name="SIM" value="1"/>
         <define name="NLD_SOARING" value="1"/>
+
     </target>
 <!--    <target name="ap"   board="lisa_m_2.0">-->
 <!--      &lt;!&ndash; baro board options for Lisa/M 2.0: BARO_BOARD_BMP085, BARO_MS5611_I2C, BARO_MS5611_SPI (default) &ndash;&gt;-->
@@ -44,17 +45,17 @@
 
       <target name="ap" board="disco">
           <module name="radio_control" type="sbus"/>
-          <module name="airspeed" type="ms45xx_i2c">
-              <!-- Pressured offset  -->
-              <!-- <define name="MS45XX_PRESSURE_SCALE" value="1.05" /> This is done internally using a formula in airspeed_ms45xx_i2c.c -->
-              <!-- <define name="MS45XX_PRESSURE_OFFSET" value="8549.0"/>  <!-- 8542.0-->
+<!--          <module name="airspeed" type="ms45xx_i2c">-->
+<!--              &lt;!&ndash; Pressured offset  &ndash;&gt;-->
+<!--              &lt;!&ndash; <define name="MS45XX_PRESSURE_SCALE" value="1.05" /> This is done internally using a formula in airspeed_ms45xx_i2c.c &ndash;&gt;-->
+<!--              &lt;!&ndash; <define name="MS45XX_PRESSURE_OFFSET" value="8549.0"/>  &lt;!&ndash; 8542.0&ndash;&gt;-->
 
-              <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
-              <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- Tweak the filter -->
+<!--              &lt;!&ndash;Gives cut-off freq of 1/(2*pi*tau) in 1Hz &ndash;&gt;-->
+<!--              <define name="MS45XX_LOWPASS_TAU" value="0.25"/> &lt;!&ndash; Tweak the filter &ndash;&gt;-->
 
-              <!-- Pressure range, defined by datasheet -->
-              <!--  This also defined the PRESSURE_SCALE -->
-          </module>
+<!--              &lt;!&ndash; Pressure range, defined by datasheet &ndash;&gt;-->
+<!--              &lt;!&ndash;  This also defined the PRESSURE_SCALE &ndash;&gt;-->
+<!--          </module>-->
 
           <module name="imu" type="disco"/>
 
@@ -87,6 +88,22 @@
       </target>
 
     <!-- all targets -->
+      <module name="airspeed" type="ms45xx_i2c">
+          <!-- Pressured offset  -->
+          <!-- <define name="MS45XX_PRESSURE_SCALE" value="1.05" /> This is done internally using a formula in airspeed_ms45xx_i2c.c -->
+          <!-- <define name="MS45XX_PRESSURE_OFFSET" value="8549.0"/>  <!-- 8542.0-->
+
+          <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
+          <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- Tweak the filter -->
+
+          <!-- Pressure range, defined by datasheet -->
+          <!--  This also defined the PRESSURE_SCALE -->
+      </module>
+<!--      <module name="airspeed" type="ms45xx_i2c">-->
+<!--          <define name="MS45XX_I2C_DEV" value="i2c1"/>-->
+<!--          <define name="MS45XX_AIRSPEED_SCALE" value="2.4"/>-->
+<!--          <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>-->
+<!--      </module>-->
 
 <!--    <define name="AGR_CLIMB"/>-->
 <!--    <define name="LOITER_TRIM"/>-->
@@ -249,37 +266,31 @@
 
 <!--    <define name="THROTTLE_SLEW_LIMITER" value="2" unit="s"/>-->
 
-
     <!-- Energy Control Algorithm -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="21.5"/>
-     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="18.0"/>
+<!--     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/>-->
+      <define name="AIRSPEED_PGAIN" value="0.0"/>  <!--  changed during last flight, was 0.19 -->
 
-      <!--      <define name="ALTITUDE_PGAIN" value="0.18"/>-->
-      <!--      <define name="AIRSPEED_PGAIN" value="0.19"/>  &lt;!&ndash;  changed during last flight, was 0.19 &ndash;&gt;-->
-      <!--      <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="1.7"/> &lt;!&ndash; set to 0 in order to be able to soar without throttle - was 0.5 before last flight&ndash;&gt;-->
-      <!--      <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.3"/>-->
-
-      <define name="ALTITUDE_PGAIN" value="0.48"/>
-      <define name="AIRSPEED_PGAIN" value="0.01"/>  <!--  changed during last flight, was 0.19 -->
-      <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.9"/> <!-- set to 0 in order to be able to soar without throttle - was 0.5 before last flight-->
-      <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.3"/>
+      <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.7"/>
 
     <define name="ALTITUDE_MAX_CLIMB" value="3.0"/>
     <define name="GLIDE_RATIO" value="7.0"/>
 
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.30"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.00"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.00"/>
-
-    <define name="ENERGY_TOT_PGAIN" value="0.3"/>
-    <define name="ENERGY_TOT_IGAIN" value="0.0"/>
-    <define name="ENERGY_DIFF_PGAIN" value="0.07"/>
+    <define name="ENERGY_DIFF_PGAIN" value="0.37"/>
     <define name="ENERGY_DIFF_IGAIN" value="0.02"/>
 
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.9" unit="%/(m/s)"/>
+      <define name="ALTITUDE_PGAIN" value="0.98"/>
 
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.001"/>
+      <!--     Throttle gains; set 0 in soar_here -->
+      <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.50"/>
+      <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.00"/>
+      <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.30"/>
+      <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.5"/>
+      <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.0"/>
+      <define name="ENERGY_TOT_PGAIN" value="0.5"/>
+      <define name="ENERGY_TOT_IGAIN" value="0.0"/>
+      <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.9" unit="%/(m/s)"/>
+      <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.9"/> <!-- set to 0 in order to be able to soar without throttle - was 0.5 before last flight-->
 
   </section>
 
@@ -302,7 +313,7 @@
 <!--    <define name="ROLL_RATE_GAIN" value="1500"/>-->
 
 
-    <define name="COURSE_PGAIN" value="0.7"/><!-- TODO: Tune values -->
+    <define name="COURSE_PGAIN" value="0.4"/><!-- TODO: Tune values -->
     <define name="COURSE_DGAIN" value="0.3"/><!-- TODO: Tune values -->
     <define name="COURSE_TAU" value="0.5"/><!-- TODO: Tune values -->
 
@@ -312,7 +323,8 @@
     <define name="PITCH_MAX_SETPOINT" value="30" unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-30" unit="deg"/>
 
-    <define name="PITCH_PGAIN" value="12372"/>
+<!--      <define name="PITCH_PGAIN" value="12372"/>-->
+      <define name="PITCH_PGAIN" value="10372"/>
     <define name="PITCH_DGAIN" value="1.5"/>
     <define name="PITCH_IGAIN" value="30"/>
     <define name="PITCH_KFFA" value="10."/>
