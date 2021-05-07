@@ -30,32 +30,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-//#include <sys/types.h>
 
-//#include <pthread.h>
-
-//#include "generated/airframe.h"
-//#include "math/pprz_algebra_float.h"
-//#include "math/pprz_algebra_double.h"
-//#include "nps_main.h"
-//#include "nps_autopilot.h"
 #include "nps_fdm.h"
-//#include "nps_sensors.h"
 #include "nps_atmosphere.h"
 #include "state.h"
 
-//#include "generated/modules.h"
-//#include "generated/settings.h"
-//#include "pprzlink/dl_protocol.h"
 #include "subsystems/datalink/downlink.h"
 #include "subsystems/datalink/telemetry.h"
 //#include "subsystems/abi.h"
 
 #include "math/pprz_geodetic_float.h"
 
-//static MsgRcvPtr ivyPtr = NULL;
-//static int seq = 1;
-//static int init_ivy = 1;
+extern int wind_speed = 12;
 
 static void cfd_wind_importer_send_position(void)
 {
@@ -67,7 +53,7 @@ static void cfd_wind_importer_send_position(void)
     uint8_t ac_id = AC_ID;
 //    printf("%f %f %f\n", _pos_x, _pos_y, _pos_z);
     DOWNLINK_SEND_LTP_POSITION(DefaultChannel, DefaultDevice, &ac_id,
-                               &_pos_x, &_pos_y, &_pos_z);
+                               &_pos_x, &_pos_y, &_pos_z, &wind_speed);
 //    pprz_msg_send_LTP_POSITION(DefaultChannel, DefaultDevice, AC_ID,
 //                               (&fdm_ivy.ltpprz_pos.x),
 //                               (&fdm_ivy.ltpprz_pos.y),
@@ -94,7 +80,7 @@ static void cfd_wind_importer_send_position(void)
 //
 //    int pid = (int)getpid();
 //
-//    // Bind to the reply; TODO: This looks like unnecessary. should check it
+//    // Bind to the reply;
 ////    ivyPtr = IvyBindMsg(on_CFD_WIND, NULL, "^%d_%d (\\S*) CFD_WIND (\\S*) (\\S*) (\\S*)", pid, seq);
 //
 //    // Send actual request

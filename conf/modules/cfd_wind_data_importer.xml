@@ -5,6 +5,15 @@
       Sending IVY request to import CFD wind data
     </description>
   </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings name="CFD_wind_module">
+        <dl_settings name="Wind_speed">
+          <dl_setting var="wind_speed" min="10" max="15" step="1" shortname="wind speed" unit="m/s"/>
+        </dl_settings>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <header>
     <file name="cfd_wind_data_importer.h"/>
   </header>

@@ -30,6 +30,7 @@ import signal
 import time
 import os
 import numpy as np
+import json
 
 # Add pprz_home path; this is necessary for pprzlink
 PPRZ_HOME = os.getenv("PAPARAZZI_HOME", os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -53,30 +54,50 @@ LTP position(aircraft): NED
 
 class WindDataImporter:
     def __init__(self, args):
+        self.ac_id = args.ac_id
         # self.origin = np.array([args.origin_x, args.origin_y, args.origin_z])
         self.origin_east = args.origin_x
         self.origin_north = args.origin_y
         self.origin_up = args.origin_z
 
-        self.cfd_importer = CFDImporter()
-        self.cfd_importer.init_importer(args.file, args.inlet_wind_speed_east,
-                                        args.inlet_wind_speed_north,
-                                        args.inlet_wind_speed_up)
-        self.wind_default_x = args.inlet_wind_speed_east
-        self.wind_default_y = args.inlet_wind_speed_north
-        self.wind_default_z = args.inlet_wind_speed_up
-        self.wind_prev_x, self.wind_prev_y, self.wind_prev_z = self.wind_default_x, self.wind_default_y, self.wind_default_z
-        self.filter_initialized = True
-        self.target_altitude = args.target_altitude
+        self.config_path = args.config_file
+        self.csv_path = args.csv_dir
+        self.cfd_importers = {}
 
-        if args.set_waypoint:
-            x_min, x_max = self.cfd_importer.get_soaring_region(self.target_altitude)
-            self.send_wp_msg(x_min, x_max, self.target_altitude, args.ac_id)
-            print(x_min, x_max)
+        # self.cfd_importer = CFDImporter()
+        # self.cfd_importer.init_importer(args.file, args.inlet_wind_speed_east,
+        #                                 args.inlet_wind_speed_north,
+        #                                 args.inlet_wind_speed_up)
+
+        self.wind_default_y = args.default_wind_speed_north
+        self.wind_default_x = args.inlet_wind_speed_east
+        self.wind_default_z = args.inlet_wind_speed_up
+
+        self.wind_prev_x, self.wind_prev_y, self.wind_prev_z = self.wind_default_x, self.wind_default_y, self.wind_default_z
+        self.target_altitude = args.target_altitude
+        self.set_waypoints = args.set_waypoints
+
+        # self.active_ws = self.wind_default_y
+
+    def init_importer(self):
+        cfd_config = None
+        # f = io.open(self.config_path, mode='r', encoding="utf-8")
+        with open(self.config_path) as f:
+            cfd_config = json.load(f)
+
+        for ws in cfd_config["files"]:
+            f = cfd_config["files"][ws]
+            self.cfd_importers[ws] = CFDImporter()
+            self.cfd_importers[ws].init_importer(os.path.join(self.csv_path, f), self.wind_default_x,
+                                                -float(ws), self.wind_default_z)
+
+        if self.set_waypoints:
+            x_min, x_max = self.cfd_importers[str(-self.wind_default_y)].get_soaring_region(self.target_altitude)
+            self.send_wp_msg(x_min, x_max, self.target_altitude, self.ac_id)
+            print("CFD Importer init completed. eq_points: ", x_min, x_max)
 
     # a simple low pass filter
     def lpf_simple(self, wind_x, wind_y, wind_z, alpha=0.5):
-        # if self.filter_initialized:
         lpf_x = (1-alpha)*wind_x + alpha*self.wind_prev_x
         lpf_y = (1-alpha)*wind_y + alpha*self.wind_prev_y
         lpf_z = (1-alpha)*wind_z + alpha*self.wind_prev_z
@@ -93,9 +114,9 @@ class WindDataImporter:
         self.wind_prev_y = self.wind_default_y
         self.wind_prev_z = self.wind_default_z
 
-    def get_wind(self, east, north, up):
+    def get_wind(self, east, north, up, ws):
         loc = np.array([north-self.origin_north, -east+self.origin_east, up-self.origin_up])       # ANSYS North West Up
-        weast, wnorth, wup = self.cfd_importer.get_wind(loc)
+        weast, wnorth, wup = self.cfd_importers[str(ws)].get_wind(loc)
         # weast, wnorth, wup = np.random.rand()*3, np.random.rand()*3, np.random.rand()*2
         return weast, wnorth, wup
 
@@ -104,10 +125,13 @@ class WindDataImporter:
             Callback for paparazzi CFD_WIND requests
             the response should be *ENU*
         """
-        north, east, down = float(msg.get_field(1)), \
+        north, east, down, ws = float(msg.get_field(1)), \
                             float(msg.get_field(2)), \
-                            float(msg.get_field(3))
-        _weast, _wnorth, _wup = self.get_wind(east, north, -down)
+                            float(msg.get_field(3)), \
+                            int(msg.get_field(4))
+        # print(north, east, down, ws)
+
+        _weast, _wnorth, _wup = self.get_wind(east, north, -down, ws)
 
         weast, wnorth, wup = self.wind_default_x, self.wind_default_y, self.wind_default_z
 
@@ -183,7 +207,7 @@ class WindDataImporter:
 
         for i in range(0, len(z_range)):
             for j in range(0, len(x_range)):
-                _weast, _wnorth, _wup = self.get_wind(0, x_range[j]+self.origin_north, z_range[i])
+                _weast, _wnorth, _wup = self.get_wind(0, x_range[j]+self.origin_north, z_range[i], 12)
 
                 # if _weast == _wnorth == _wup == 0:
                 #     self.initialize_filter()
@@ -225,9 +249,21 @@ def main():
     argp = ap.ArgumentParser(description="Wind data provider "
                                          "for Paparazzi from CFD or potential flow simulation")
 
-    argp.add_argument("-f", "--file", required=False,
-                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_r_40_v_12m.csv",
-                      help="CFD result file path, relative from pprz home")
+    argp.add_argument("-config", "--config-file", required=False,
+                      default=PPRZ_HOME+"/../nld_cfd_results/config.json",
+                      help="CFD config file, relative from pprz home")
+
+    argp.add_argument("-w", "--default-wind-speed-north", required=False,
+                      default=-12,
+                      help="Default wind speed (north)")
+
+    # argp.add_argument("-f", "--file", required=False,
+    #                   default=PPRZ_HOME+"/../nld_cfd_results/cfd_csv/export_hill_r_40_v_12m.csv",
+    #                   help="CFD result file path, relative from pprz home")
+
+    argp.add_argument("-dir", "--csv-dir", required=False,
+                      default=PPRZ_HOME+'/../nld_cfd_results/cfd_csv',
+                      help="Path to a *DIR* containing CFD results, relative path from the pprz home.")
 
     # argp.add_argument("-t", "--time-step", required=False, type=int,
     #                   help="Time step for importing dynamic/time-variant CFD simulation. "
@@ -246,18 +282,18 @@ def main():
     # default wind speed in ENU
     argp.add_argument("-i", "--inlet-wind-speed-east", required=False, type=float,
                       default=0,
-                      help="Inlet wind speed (EAST), default value is (0, 10, 0) in ENU")
-    argp.add_argument("-j", "--inlet-wind-speed-north", required=False, type=float,
-                      default=-12,
-                      help="Inlet wind speed (NORTH), default value is (0, 10, 0) in ENU")
+                      help="Inlet wind speed (EAST), default value is 0")
+    # argp.add_argument("-j", "--inlet-wind-speed-north", required=False, type=float,
+    #                   default=-12,
+    #                   help="Inlet wind speed (NORTH), default value is (0, 10, 0) in ENU")
     argp.add_argument("-k", "--inlet-wind-speed-up", required=False, type=float,
                       default=0.,
-                      help="Inlet wind speed (UP), default value is (0, 10, 0) in ENU")
+                      help="Inlet wind speed (UP), default value is 0")
 
     argp.add_argument("-e", "--export", required=False, type=bool,
                       default=False, help="Flag for exporting wind field")
 
-    argp.add_argument("-wp", "--set-waypoint", required=False, type=bool,
+    argp.add_argument("-wp", "--set-waypoints", required=False, type=bool,
                       default=True, help="Set soaring waypoints")
 
     argp.add_argument("-alt", "--target-altitude", required=False, type=float,
@@ -275,6 +311,7 @@ def main():
     ivy = IvyMessagesInterface("WindSimulationData")
 
     importer = WindDataImporter(args)
+    importer.init_importer()
 
     if args.export:
         importer.export_wind_field()

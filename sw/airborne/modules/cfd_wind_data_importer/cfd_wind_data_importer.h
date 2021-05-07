@@ -28,6 +28,8 @@
 
 #include "std.h"
 
+extern int wind_speed;
+
 extern void init_cfd_wind_data_importer(void);
 //extern void init_cfd_wind_data_importer_ivy(void);
 extern void cfd_wind_data_importer_periodic(void);

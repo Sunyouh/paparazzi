@@ -29,11 +29,6 @@ import time
 
 class CFDImporter:
     def __init__(self):
-        self.cfd_points = None
-        self.cfd_u = None
-        self.interpolator_x = None
-        self.interpolator_y = None
-        self.interpolator_z = None
         self.translate_origin = (0, 0, 0)
         self.wind_data = None
         self.count = 0
@@ -66,10 +61,11 @@ class CFDImporter:
         self.wind_data = np.concatenate((_wind_data[:, :3], _wind_data[:, 3:7]), axis=1)
         # self.wind_data = _wind_data
         self.kd_tree = KDTree(_wind_data[:, :3])
+        # print(f_name, self.wind_data)
 
     def get_wind(self, loc):
         # ANSYS North West Up
-
+        # print(self.inlet_wind_speed_enu, loc)
         dist, idx = self.kd_tree.query(loc, distance_upper_bound=3)
 
         wind_east, wind_north, wind_up = 0, 0, 0
