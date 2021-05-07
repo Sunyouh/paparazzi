@@ -18,10 +18,10 @@
         <define name="NPS_GAZEBO_SCALE" value="1" type="float" />
         <!--<define name="NPS_SIMULATE_VIDEO" value="1"/>-->
       </module>
-      <module name="potential_flow_simulator">
-        <define name="PF_SET_WIND_NPS_ENV" value="1" type="int"/>
-      </module>
-<!--      <module name="cfd_wind_data_importer"/>-->
+<!--      <module name="potential_flow_simulator">-->
+<!--        <define name="PF_SET_WIND_NPS_ENV" value="1" type="int"/>-->
+<!--      </module>-->
+      <module name="cfd_wind_data_importer"/>
       <module name="imu" type="nps"/>
 <!--      <module name="ins" type="alt_float"/>-->
 <!--      <module name="telemetry" type="transparent_udp"/>-->

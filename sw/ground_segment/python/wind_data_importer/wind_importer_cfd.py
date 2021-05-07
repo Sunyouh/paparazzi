@@ -130,6 +130,7 @@ class CFDImporter:
             C_D_max_ach = C_D_min_ach + 1. * (2. / 9) * S_turb_spec
             # drag_turb_func(wind_mag)/(0.5* rho * np.power(wind_mag, 2) * S)#1*(2/9)*S_turb_spec
 
+            C_D = CD_0 + (C_L_req*C_L_req)*Cdi_coef
             C_D_turb = C_D_req - C_D_min_ach
 
             # D_turb = 0.5 * rho * np.power(wind_mag, 2) * S * C_D_turb
@@ -139,14 +140,15 @@ class CFDImporter:
             stall = (alpha > np.deg2rad(15)) & (alpha < np.deg2rad(-10))
             C_L_req[stall] = np.nan
             C_D_req[stall] = np.nan
-            C_D_min_ach[stall] = np.nan
-            C_D_max_ach[stall] = np.nan
+            # C_D_min_ach[stall] = np.nan
+            # C_D_max_ach[stall] = np.nan
             # alpha[stall] = np.nan
 
-            eq_points = np.where((C_D_req <= C_D_min_ach) | (C_D_req >= C_D_max_ach))
+            # eq_points = np.where((C_D_req <= C_D_min_ach) | (C_D_req >= C_D_max_ach))
+            eq_points = (C_D>C_D_req-0.001) & (C_D<C_D_req+0.001)
             P_turb = 0.5 * rho * S * np.power(wind_mag, 3) * C_D_turb
-            P_turb[eq_points] = np.nan
-            # alpha[eq_points] = np.nan
+            P_turb[eq_points == False] = np.nan
+            alpha[eq_points == False] = np.nan
             # D_turb[eq_points] = np.nan
 
             # v_mask = np.where(wind_v < 0)
@@ -174,7 +176,8 @@ class CFDImporter:
         # pf_p_turbs = calc_eq(pf_wind_mag, pf_wind_u, pf_wind_v)
 
         alt_index = np.where((z_points > alt_low) & (z_points < alt_high))
-        over_thres_idx = np.where((cfd_p_turbs is not None) & (cfd_p_turbs > p_threshold))
+        # over_thres_idx = np.where((cfd_p_turbs is not None) & (cfd_p_turbs > p_threshold))
+        over_thres_idx = np.where((cfd_p_turbs is not None) & (cfd_p_turbs > 0))
         overlap = np.intersect1d(over_thres_idx, alt_index)
         x_overlap = x_points[overlap]
         # print(x_overlap, len(x_overlap))

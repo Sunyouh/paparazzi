@@ -65,7 +65,7 @@
     <program name="PayloadForward" command="sw/ground_segment/python/payload_forward/payload.py"/>
   </section>
   <section name="sessions">
-    <session name="Soaring Sim">
+    <session name="Soaring Sim - CJ">
       <program name="Messages"/>
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>
@@ -326,7 +326,8 @@
       <!--        <arg flag="-u" constant="1.7"/>-->
       <!--      </program>-->
       <program name="Gazebo"/>
-      <program name="WindDataImporter"/>
+      <program name="WindDataImporter">
+      </program>
       <program name="Real-time Plotter">
         <!-- <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
@@ -389,7 +390,10 @@
 <!--        <arg flag="-u" constant="1.7"/>-->
 <!--      </program>-->
 <!--      <program name="Gazebo"/>-->
-      <program name="WindDataImporter"/>
+      <program name="WindDataImporter">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+<!--        <arg flag="-alt" constant="60"/>-->
+      </program>
 <!--      <program name="Real-time Plotter">-->
 <!--        &lt;!&ndash; <arg flag="-g" constant="2000x500-0+520"/>-->
 <!--        <arg flag="-t" constant="Distance WP"/>-->
@@ -425,112 +429,112 @@
     </session>
 
 
-    <session name="Soaring Sim - Gazebo">
-      <program name="Messages"/>
-      <program name="Simulator">
-        <arg flag="-a" constant="@AIRCRAFT"/>
-        <arg flag="-t" constant="nps"/>
-        <arg flag="--boot"/>
-        <arg flag="--norc"/>
-      </program>
-      <program name="GCS">
-        <arg flag="-center_ac_id" constant="@AC_ID"/>
-        <arg flag="-layout" constant="nld_gcs_layout.xml"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Data Link">
-        <arg flag="-udp"/>
-      </program>
-      <program name="GPSd position display">
-        <arg flag="--ac" constant="@AC_ID"/>
-        <arg flag="--simulate"/>
-      </program>
-      <program name="Environment Simulator">
-        <arg flag="-w" constant="3"/> <!-- Wind speed -->
-        <arg flag="-d" constant="0"/> <!-- Wind direction -->
-      </program>
-      <program name="Real-time Plotter">
-        <!-- <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Course"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:course:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:psi:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Roll"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:roll:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:phi:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Pitch"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/>
-        <arg flag="-n"/>-->
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Airspeed"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>
-        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-      </program>
-      <program name="Gazebo"/>
-      <!--      <program name="RtpViewer"/>-->
-    </session>
-    <session name="Flight ttyUSB0 Transparent @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-        <arg flag="-center_ac_id" constant="1"/>
-        <arg flag="-layout" constant="nld_gcs_layout.xml"/>
-      </program>
-     <!-- <program name="Real-time Plotter">
-        <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/> 
-        <arg flag="-n"/> 
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Course"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:course:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:psi:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Roll"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:roll:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:phi:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Pitch"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/> 
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+520"/>
-        <arg flag="-t" constant="Tuning Airspeed"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>
-        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>
-        <arg flag="-c" constant="*:telemetry:GPS:speed:1"/>
-      </program>
-      -->
-    </session>
+<!--    <session name="Soaring Sim - Gazebo">-->
+<!--      <program name="Messages"/>-->
+<!--      <program name="Simulator">-->
+<!--        <arg flag="-a" constant="@AIRCRAFT"/>-->
+<!--        <arg flag="-t" constant="nps"/>-->
+<!--        <arg flag="&#45;&#45;boot"/>-->
+<!--        <arg flag="&#45;&#45;norc"/>-->
+<!--      </program>-->
+<!--      <program name="GCS">-->
+<!--        <arg flag="-center_ac_id" constant="@AC_ID"/>-->
+<!--        <arg flag="-layout" constant="nld_gcs_layout.xml"/>-->
+<!--      </program>-->
+<!--      <program name="Server">-->
+<!--        <arg flag="-n"/>-->
+<!--      </program>-->
+<!--      <program name="Data Link">-->
+<!--        <arg flag="-udp"/>-->
+<!--      </program>-->
+<!--      <program name="GPSd position display">-->
+<!--        <arg flag="&#45;&#45;ac" constant="@AC_ID"/>-->
+<!--        <arg flag="&#45;&#45;simulate"/>-->
+<!--      </program>-->
+<!--      <program name="Environment Simulator">-->
+<!--        <arg flag="-w" constant="3"/> &lt;!&ndash; Wind speed &ndash;&gt;-->
+<!--        <arg flag="-d" constant="0"/> &lt;!&ndash; Wind direction &ndash;&gt;-->
+<!--      </program>-->
+<!--      <program name="Real-time Plotter">-->
+<!--        &lt;!&ndash; <arg flag="-g" constant="2000x500-0+520"/>-->
+<!--        <arg flag="-t" constant="Distance WP"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>-->
+<!--        <arg flag="-n"/>-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Course"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:DESIRED:course:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:ATTITUDE:psi:1"/>-->
+<!--        <arg flag="-n"/>-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Roll"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:DESIRED:roll:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:ATTITUDE:phi:1"/>-->
+<!--        <arg flag="-n"/>-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Pitch"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/>-->
+<!--        <arg flag="-n"/>&ndash;&gt;-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Airspeed"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>-->
+<!--      </program>-->
+<!--      <program name="Gazebo"/>-->
+<!--      &lt;!&ndash;      <program name="RtpViewer"/>&ndash;&gt;-->
+<!--    </session>-->
+<!--    <session name="Flight ttyUSB0 Transparent @57600">-->
+<!--      <program name="Data Link">-->
+<!--        <arg flag="-d" constant="/dev/ttyUSB0"/>-->
+<!--        <arg flag="-s" constant="57600"/>-->
+<!--      </program>-->
+<!--      <program name="Server"/>-->
+<!--      <program name="GCS">-->
+<!--        <arg flag="-speech"/>-->
+<!--        <arg flag="-center_ac_id" constant="1"/>-->
+<!--        <arg flag="-layout" constant="nld_gcs_layout.xml"/>-->
+<!--      </program>-->
+<!--     &lt;!&ndash; <program name="Real-time Plotter">-->
+<!--        <arg flag="-g" constant="2000x500-0+520"/>-->
+<!--        <arg flag="-t" constant="Distance WP"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/> -->
+<!--        <arg flag="-n"/> -->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Course"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:DESIRED:course:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:ATTITUDE:psi:1"/>-->
+<!--        <arg flag="-n"/>-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Roll"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:DESIRED:roll:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:ATTITUDE:phi:1"/>-->
+<!--        <arg flag="-n"/>-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Pitch"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/> -->
+<!--        <arg flag="-n"/>-->
+<!--        <arg flag="-g" constant="2000x300-0+520"/>-->
+<!--        <arg flag="-t" constant="Tuning Airspeed"/>-->
+<!--        <arg flag="-u" constant="0.1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>-->
+<!--        <arg flag="-c" constant="*:telemetry:GPS:speed:1"/>-->
+<!--      </program>-->
+<!--      &ndash;&gt;-->
+<!--    </session>-->
     
     <session name="Flight UDP">
       <program name="Messages"/>

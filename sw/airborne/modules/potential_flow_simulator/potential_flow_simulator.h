@@ -29,6 +29,9 @@
 
 #include "std.h"
 
+// wind speed m/s, dir degree CW from north
+extern float ref_wind_spd;
+extern float ref_wind_dir;
 
 extern void init_potential_flow_simulator(void);
 extern void potential_flow_simulator_periodic(void);

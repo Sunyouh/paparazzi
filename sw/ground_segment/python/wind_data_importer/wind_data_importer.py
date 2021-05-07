@@ -126,6 +126,7 @@ class WindDataImporter:
         ivy.send(msg_back)
 
     def send_wp_msg(self, x_min, x_max, alt, ac_id, wp_east=0):
+        # WP3: "soaring-1", closer to the dune
         msg_1 = PprzMessage("datalink", "MOVE_WAYPOINT_LTP")
         msg_1.set_value_by_name("ac_id", ac_id)
         msg_1.set_value_by_name("wp_id", 3)
@@ -134,6 +135,7 @@ class WindDataImporter:
         msg_1.set_value_by_name("ltp_z", -(alt+self.origin_up))
         ivy.send(msg_1)
 
+        # WP4: "soaring-middle", reference point between WP3 and WP5
         msg_2 = PprzMessage("datalink", "MOVE_WAYPOINT_LTP")
         msg_2.set_value_by_name("ac_id", ac_id)
         msg_2.set_value_by_name("wp_id", 4)
@@ -142,6 +144,7 @@ class WindDataImporter:
         msg_2.set_value_by_name("ltp_z", -(alt+self.origin_up))
         ivy.send(msg_2)
 
+        # WP5: "soaring-2", further from the dune
         msg_3 = PprzMessage("datalink", "MOVE_WAYPOINT_LTP")
         msg_3.set_value_by_name("ac_id", ac_id)
         msg_3.set_value_by_name("wp_id", 5)
@@ -223,7 +226,7 @@ def main():
                                          "for Paparazzi from CFD or potential flow simulation")
 
     argp.add_argument("-f", "--file", required=False,
-                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_r_50_13.csv",
+                      default=PPRZ_HOME+"/../nld_cfd_results/export_hill_r_40_v_12m.csv",
                       help="CFD result file path, relative from pprz home")
 
     # argp.add_argument("-t", "--time-step", required=False, type=int,
@@ -234,7 +237,7 @@ def main():
                       default=0.,
                       help="Origin position x (EAST).")
     argp.add_argument("-y", "--origin-y", required=False, type=float,
-                      default=100.,
+                      default=230,
                       help="Origin position y (NORTH).")
     argp.add_argument("-z", "--origin-z", required=False, type=float,
                       default=0.,
@@ -258,7 +261,7 @@ def main():
                       default=True, help="Set soaring waypoints")
 
     argp.add_argument("-alt", "--target-altitude", required=False, type=float,
-                      default=70, help="Soaring WP altitude")
+                      default=60, help="Soaring WP altitude")
 
     argp.add_argument("-ac", "--ac_id", required=False, type=int,
                       default=8, help="AC_ID")
@@ -270,23 +273,9 @@ def main():
 
     global ivy
     ivy = IvyMessagesInterface("WindSimulationData")
-    # ivy.subscribe(cfd_wind_cb, '(.* CFD_WIND_REQ .*)')
 
     importer = WindDataImporter(args)
 
-    # global origin
-    # origin = np.array([args.origin_x, args.origin_y, args.origin_z])
-
-    # build atmosphere simulation source
-    # global importer
-    # if args.type == 0:
-    #     importer = CFDImporter()
-    #     importer.init_importer(args.file, args.inlet_wind_speed_east, args.inlet_wind_speed_north,
-    #                            args.inlet_wind_speed_up)
-    # #     elif arguments.type == 1:
-    # #         importer = PotentialFlowImporter()
-    # else:
-    #     print("Please specify importer type")
     if args.export:
         importer.export_wind_field()
         return

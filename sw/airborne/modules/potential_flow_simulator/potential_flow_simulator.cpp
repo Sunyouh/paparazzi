@@ -46,7 +46,7 @@ using namespace std;
 
 // define radius of the obstacle - TODO: building and boat?
 #ifndef PF_OBSTACLE_RADIUS
-#define PF_OBSTACLE_RADIUS 50
+#define PF_OBSTACLE_RADIUS 40
 #endif
 // surface roughness
 #ifndef PF_SURFACE_ROUGHNESS
@@ -71,8 +71,12 @@ using namespace std;
 #define PF_OBSTACLE_POSITION_Z 0
 #endif
 // reference wind velocity: x dir in the obstacle's body frame
-#ifndef PF_REF_WIND_VEL
-#define PF_REF_WIND_VEL -12
+#ifndef PF_REF_WIND_SPD
+#define PF_REF_WIND_SPD -12
+#endif
+// wind direction from north CW in degrees
+#ifndef PF_REF_WIND_DIR
+#define PF_REF_WIND_DIR 180
 #endif
 // whether use ground gps or not
 #ifndef PF_USE_GROUND_GPS
@@ -95,6 +99,10 @@ using namespace std;
 //void follow_me_set_heading(void);
 //float average_heading(float diffx, float diffy);
 //#endif
+
+extern float ref_wind_spd = PF_REF_WIND_SPD;
+extern float ref_wind_dir = PF_REF_WIND_DIR;
+
 struct FloatVect3 compute_potential_flow(struct FloatVect3 rel_dist_v3f, float ref_wind_speed);
 
 
@@ -202,6 +210,8 @@ struct FloatVect3 compute_potential_flow(struct FloatVect3 rel_dist_v3f, float r
 void init_potential_flow_simulator(void)
 {
     // your init code here
+//    ref_wind_spd = PF_REF_WIND_SPD;
+//    ref_wind_dir = PF_REF_WIND_DIR;
 }
 
 void potential_flow_simulator_periodic(void)
@@ -259,7 +269,7 @@ void potential_flow_simulator_periodic(void)
 //    cout << "dist: " << rel_dist.x << ", " << rel_dist.y << ", " << rel_dist.z << endl;
 
     /// potential flow calculation: obstacle's body frame; wind velocity (x, z) and reference wind vel (x dir)
-    struct FloatVect3 wind_vel_v3f = compute_potential_flow(rel_dist, PF_REF_WIND_VEL);
+    struct FloatVect3 wind_vel_v3f = compute_potential_flow(rel_dist, ref_wind_spd);
 
 //    cout << wind_vel_v3f.x << ", " << wind_vel_v3f.y << ", " << wind_vel_v3f.z << endl;
 
@@ -284,69 +294,3 @@ void potential_flow_simulator_periodic(void)
         nps_atmosphere_set_wind_ned((double)wind_vel_v3f.x, (double)wind_vel_v3f.y, (double)ver_wind);
     }
 }
-
-
-/*
- *
- * struct FloatVect3 compute_wind_field(void){
-    // Initial Parameters for wind field computation
-	float R_ridge = 10.0; // Height of the hill in m
-	float U_inf = 15.0; // Wind velocity at infinity in m/s
-	float a = 10; // Defines loci x-position
-	float x_stag = 14; // m, defines a-axis of standard oval
-	float b = sqrt(x_stag*x_stag - a*a);
-
-	struct FloatVect3 dist_from_boat = compute_state();
-	struct FloatVect3 wind_vector;
-	wind_vector.x = 0;
-
-	// Start of computation
-    float m = M_PI*U_inf/a*(x_stag*x_stag - a*a);
-    dist_y_plus_a = dist_from_boat.y + a;
-    dist_z_plus_a = dist_from_boat.z + a;
-    dist_y_minus_a = dist_from_boat.y - a;
-    dist_z_minus_a = dist_from_boat.z - a;
-
-    wind_vector.y = U_inf + m / (2 * M_PI) * (dist_y_plus_a / (dist_y_plus_a * dist_y_plus_a + dist_from_boat.z * dist_from_boat.z) - (dist_y_minus_a) / (dist_y_minus_a*dist_y_minus_a + dist_from_boat.z*dist_from_boat.z));
-    wind_vector.z = -(m * dist_from_boat.z) / (2 * M_PI) * (1 / (dist_y_plus_a*dist_y_plus_a + dist_from_boat.z*dist_from_boat.z) - 1 / (dist_y_minus_a*dist_y_minus_a + dist_from_boat.z*dist_from_boat.z));
-
-
-    wind_vector.y = U_inf + m / (2 * M_PI) * ((dist_from_boat.y + a) / ((dist_from_boat.y+0.001 + a) * (dist_from_boat.y+0.001 + a) + dist_from_boat.z * dist_from_boat.z) - (dist_from_boat.y+0.001 - a) / ((dist_from_boat.y+0.001 - a)*(dist_from_boat.y+0.001 - a) + dist_from_boat.z*dist_from_boat.z));
-    wind_vector.z = -(m * dist_from_boat.z) / (2 * M_PI) * (1 / ((dist_from_boat.y+0.001 + a)*(dist_from_boat.y+0.001 + a) + dist_from_boat.z*dist_from_boat.z) - 1 / ((dist_from_boat.y+0.001 - a)*(dist_from_boat.y+0.001 - a) + dist_from_boat.z*dist_from_boat.z));
-
-	float ellipse_eq = (dist_from_boat.y * dist_from_boat.y) / (x_stag * x_stag) + (dist_from_boat.z * dist_from_boat.z) / (b * b);
-
-	if (ellipse_eq < 1){
-	    wind_vector.x = 0;
-	    wind_vector.y = 0;
-	    wind_vector.z = 0;
-	    return wind_vector;
-	}
-
-    if (dist_from_boat.y < x_stag){
-	    float z_ellipse = -b / x_stag * sqrt(x_stag * x_stag- dist_from_boat.y * dist_from_boat.y);
-
-	    // v_x *= ((z_i - z_ellipse)/-20)**(1/7)
-	    // v_z *= ((z_i - z_ellipse) / -20) ** (1 / 7)
-
-	    float mult_factor = (log(-(dist_from_boat.z - z_ellipse))/0.05)/(log(-(-20 - z_ellipse))/0.05);
-		if (mult_factor){
-            wind_vector.y *= mult_factor;
-	        wind_vector.z *= mult_factor;
-		} else {
-	        if (dist_from_boat.z < 0){
-	            z_ellipse = -0.01;
-	            mult_factor = (log(-(dist_from_boat.z - z_ellipse)) / 0.05) / (log(-(-20 - z_ellipse)) / 0.05);
-	            wind_vector.y *= mult_factor;
-	            wind_vector.z *= mult_factor;
-	        } else {
-	            wind_vector.x = 0;
-	            wind_vector.y = 0;
-	            wind_vector.z = 0;
-	        }
-		}
-    }
-    return wind_vector;
-}
- *
- */
