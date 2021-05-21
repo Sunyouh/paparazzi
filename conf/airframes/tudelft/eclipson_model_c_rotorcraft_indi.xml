@@ -12,7 +12,7 @@
 
   <firmware name="rotorcraft">
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
-
+    <define name="inflight" value="TRUE"/>
     <!--<define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>
     <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="0.2"/>-->
 
@@ -43,18 +43,19 @@
 <!--      <module name="logger" type="sd_chibios"/>-->
 <!--      <module name="flight_recorder"/>-->
 
-      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
+<!--      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>-->
 
-      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
-      <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
-      <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
-      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/>  <!--Throttle hold in command laws-->
+      <!--<define name="RADIO_FMODE"       value="RADIO_AUX2"/> --><!-- Throttle curve select -->
+      <define name="RADIO_FBW_MODE"    value="RADIO_MODE"/> <!-- Switch between manual , stabilized att, and autonomous -->
+<!--      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>-->
     </target>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B57600"/>
     </module>
 
+    <define name="autopilot_motors_on" value="TRUE"/>
     <module name="actuators" type="pwm"/>
 
     <module name="imu"           type="mpu6000">
@@ -79,21 +80,33 @@
     </module>
 
     <module name="stabilization" type="indi_simple"/>
-    <module name="stabilization" type="rate_indi"/>
+    <!--<module name="stabilization" type="rate_indi"/>-->
     <module name="ins"           type="ekf2" />
 
-    <configure name="USE_ADC_2" value="TRUE"/>
-    <define name="ADC_CHANNEL_VSUPPLY" value="ADC_2"/>
+<!--     enable if you want it for debugging the raw ADC values, handy... -->
+<!--    <module name="adc_generic">-->
+<!--      <configure name="USE_ADC_1" value="TRUE"/>-->
+<!--      <configure name="USE_ADC_2" value="TRUE"/>-->
+<!--      <configure name="USE_ADC_3" value="TRUE"/>-->
+<!--      <configure name="USE_ADC_4" value="TRUE"/>-->
+<!--&lt;!&ndash;    <configure name="ADC_CHANNEL_GENERIC1" value="ADC_1"/>&ndash;&gt;-->
+<!--      <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>-->
+<!--&lt;!&ndash;      <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>&ndash;&gt;-->
+<!--    <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>-->
+<!--    </module>-->
 
-    <module name="current_sensor">
-      <configure name="USE_ADC_3" value="TRUE"/>
-      <configure name="ADC_CURRENT_SENSOR" value="ADC_3"/>
-      <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.1"/>
-    </module>
+<!--    <configure name="USE_ADC_3" value="TRUE"/>-->
+<!--   <define name="ADC_CHANNEL_VSUPPLY" value="ADC_3"/>-->
+
+<!--    <module name="current_sensor">-->
+<!--      <configure name="USE_ADC_4" value="TRUE"/>-->
+<!--      <configure name="ADC_CURRENT_SENSOR" value="ADC_4"/>-->
+<!--      <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.1"/>-->
+<!--    </module>-->
     
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-
+    <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
     <!-- Internal MAG -->
     <module name="mag_ist8310">
       <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
@@ -119,8 +132,8 @@
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.0"/>
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
-      <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
-      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
+      <define name="GUIDANCE_H_REF_MAX_SPEED" value="16.0"/> <!--not used-->
+      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="14.0"/>
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
@@ -131,18 +144,6 @@
       <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
     </module>
 
-    <!--<module name="ctrl_effectiveness_scheduling">
-      <define name="SQUARED_ROLL_EFF" value="0.0"/>
-      <define name="PITCH_EFF_AT_60" value="8.79"/>
-      <define name="YAW_EFF_AT_60" value="11.52"/>-->
-      <!--function of the form: A + B*airspeed^2-->
-      <!--<define name="CE_PITCH_A" value="8.79"/>
-      <define name="CE_PITCH_B" value="0.0"/>
-      <define name="CE_YAW_A" value="11.52"/>
-      <define name="CE_YAW_B" value="0.0309"/>
-    </module>-->
-
-    <!--<module name="motor_mixing"/><maybe remove-->
   </firmware>
 
   <servos driver="Pwm">
@@ -154,8 +155,8 @@
   </servos>
 
   <commands>
-    <axis name="ROLL"   failsafe_value="0"/>
-    <axis name="PITCH"  failsafe_value="-300"/>
+    <axis name="ROLL"   failsafe_value="1200"/>
+    <axis name="PITCH"  failsafe_value="-1000"/>
     <axis name="YAW"    failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
   </commands>
@@ -167,23 +168,20 @@
     <set command="YAW"      value="@YAW"/>
   </rc_commands>
 
-
   <command_laws>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
     <let var="manual"     value="LessThan(RadioControlValues(RADIO_MODE), -4800)"/>
     <let var="autopil"     value="(1-($manual))"/>
 
-    <let var="aileron" value="@ROLL"/>
-    <let var="elevator" value="@PITCH"/>
-
-    <set servo="S_AILERON_LEFT" value="@ROLL"/>
-    <set servo="S_AILERON_RIGHT" value="-@ROLL"/>
     <set servo="S_THROTTLE" value="@THRUST"/>
+    <set servo="S_AILERON_LEFT" value="@ROLL"/>
     <set servo="S_ELEVATOR" value="@PITCH"/>
-    <set servo="S_RUDDER" value="@YAW"/> 
+    <set servo="S_RUDDER" value="@YAW"/>
+    <set servo="S_AILERON_RIGHT" value="-@ROLL"/>
  </command_laws>
 
   <section name="MISC">
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.2024749557 * adc)"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-1.0"/>
@@ -193,17 +191,16 @@
   </section>
 
   <section name="FORWARD">
-    <!--The Eclipsion C uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
-    <!-- This is the pitch angle that the Quadshot will have in forward flight, where 0 degrees is hover-->
+    <!-- This is the pitch angle that the aircraft will have in forward flight, where 0 degrees is hover-->
     <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/>
     <!-- For hybrid guidance by default set to 15-->
     <!--<define name="MAX_AIRSPEED" value="20.0"/>-->
   </section>
 
   <section name="AUTO1" prefix="AUTO1_">
-    <define name="MAX_ROLL" value="0.85"/>
-    <define name="MAX_PITCH" value="0.6"/>
+    <define name="MAX_ROLL" value="45." unit="deg"/>
+    <define name="MAX_PITCH" value="30." unit="deg"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -242,14 +239,17 @@
     <define name="SP_MAX_PHI"     value="40." unit="deg"/>
     <define name="SP_MAX_THETA"   value="20." unit="deg"/>
     <define name="SP_MAX_R"       value="90." unit="deg/s"/>
-    <define name="DEADBAND_R"     value="250"/>
-    <define name="DEADBAND_A"     value="250"/>
+    <define name="DEADBAND_R"     value="0"/>
+    <define name="DEADBAND_A"     value="50"/>
     <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>
   </section>
 
 
   <section name="AHRS" prefix="AHRS_">
     <!-- Delft -->
+
+    <!--<configure name="AHRS_ALIGNER_LED" value="2"/>--><!-- Which color you want sir? ;) -->
+    <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="H_X" value="0.3892503"/>
     <define name="H_Y" value="0.0017972"/>
     <define name="H_Z" value="0.9211303"/>
@@ -359,8 +359,6 @@
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
     <!--<define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>-->
     <define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>
-
-    
     <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
     <define name="MAX_AIRSPEED" value="12."/>
     <define name="PITCH_LIFT_EFF" value="0.12"/>
@@ -370,28 +368,58 @@
   </section>
 
   <section name="RADIO" prefix="RADIO_">
-    <define name="TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
-    <define name="FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
+<!--    <define name="TH_HOLD"     value="RADIO_AUX1"/> &lt;!&ndash; Throttle hold in command laws &ndash;&gt;-->
+<!--    <define name="FMODE"       value="RADIO_AUX2"/> &lt;!&ndash; Throttle curve select &ndash;&gt;-->
     <define name="FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
-    <define name="FLAPS"       value="RADIO_AUX4"/> <!-- Flaps control -->
-    <define name="KILL_SWITCH" value="RADIO_AUX1"/>
-    <define name="BACK_THOLD"  value="RADIO_AUX5"/>
+<!--    <define name="FLAPS"       value="RADIO_AUX4"/> &lt;!&ndash; Flaps control &ndash;&gt;-->
+<!--    <define name="KILL_SWITCH" value="RADIO_AUX1"/>-->
+<!--    <define name="BACK_THOLD"  value="RADIO_AUX5"/>-->
   </section>
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_FORWARD"/>
+    <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
+    <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
+<!--    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="FALSE"/>-->
   </section>
 
   <section name="BAT">
-    <define name="CATASTROPHIC_BAT_LEVEL" value="9.0" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="9.3" unit="V"/>
-    <define name="LOW_BAT_LEVEL" value="9.6" unit="V"/>
+<!--    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 12.0877510901 * adc)"/>-->
+    <!--define name="MilliAmpereOfAdc(adc)" value="((adc) - 505) * 124.0f"/-->
+    <define name="MAX_BAT_CAPACITY" value="1300" unit="mAh"/>
+    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="150" unit="mA"/>
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="15000" unit="mA"/>
     <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="10.4" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="9.6" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="9.0" unit="V"/>
+  </section>
 
-    <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>-->
+  <!--  Can as well be your handlaunch, a.k.a. the human catapult ;) -->
+  <section name="CATAPULT" prefix="NAV_CATAPULT_">
+    <define name="MOTOR_DELAY" value="0." unit="s"/>
+    <define name="HEADING_DELAY" value="3.0" unit="s"/>
+    <define name="ACCELERATION_THRESHOLD" value="1.1"/>
+    <define name="INITIAL_PITCH" value="20.0" unit="deg"/>
+    <define name="INITIAL_THROTTLE" value="1.0"/>
+  </section>
+
+  <section name="GLS_APPROACH" prefix="APP_">
+    <define name="DISTANCE_AF_SD" value="30" unit="m"/>
+    <define name="ANGLE" value="2" unit="deg"/>
+    <define name="INTERCEPT_AF_SD" value="80" unit="m"/>
+    <!--<define name="INTERCEPT_RATE" value="0.624" unit="m/s/s"/>-->
+    <define name="TARGET_SPEED" value="11.0" unit="m/s"/>
+  </section>
+
+  <section name="GCS">
+    <define name="SPEECH_NAME" value="Eclipson"/>
+    <define name="AC_ICON" value="fixedwing"/>
+    <define name="ALT_SHIFT_PLUS_PLUS" value="50"/>
+    <define name="ALT_SHIFT_PLUS" value="10"/>
+    <define name="ALT_SHIFT_MINUS" value="-10"/>
   </section>
 
 </airframe>
