@@ -8,13 +8,11 @@
 -->
 
 <airframe name="EclipsonC">
-  <description>Neddrone4</description>
+  <description>Eclipson model C Rotorcraft INDI</description>
 
   <firmware name="rotorcraft">
-    <configure name="USE_MAGNETOMETER" value="TRUE"/>
-    <define name="inflight" value="TRUE"/>
-    <!--<define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>
-    <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="0.2"/>-->
+<!--    <configure name="USE_MAGNETOMETER" value="TRUE"/>-->
+<!--    <define name="inflight" value="TRUE"/>-->
 
     <target name="ap" board="px4fmu_5.0_chibios">
       <configure name="PERIODIC_FREQUENCY"  value="500"/>
@@ -33,16 +31,6 @@
 <!--      </module>-->
 
       <module name="scheduling_indi_simple"/>
-
-      <!-- Forward FuelCell data back to the GCS -->
-      <!--module name="generic_uart_sensor"/-->
-
-      <!-- Logger -->
-<!--      <module name="tlsf"/>-->
-<!--      <module name="pprzlog"/>-->
-<!--      <module name="logger" type="sd_chibios"/>-->
-<!--      <module name="flight_recorder"/>-->
-
 <!--      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>-->
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/>  <!--Throttle hold in command laws-->
@@ -58,55 +46,23 @@
     <define name="autopilot_motors_on" value="TRUE"/>
     <module name="actuators" type="pwm"/>
 
-    <module name="imu"           type="mpu6000">
-      <!-- define name="ICM20608"/> --> <!-- Not used atm -->
-      <!-- To be able (for now) to set AP IMU orientaion -->
-<!--      <define name="IMU_GYRO_P_SIGN" value="1"/>-->
-<!--      <define name="IMU_GYRO_Q_SIGN" value="-1"/>-->
-<!--      <define name="IMU_GYRO_R_SIGN" value="-1"/>-->
-
-<!--      <define name="IMU_ACCEL_X_SIGN" value="1"/>-->
-<!--      <define name="IMU_ACCEL_Y_SIGN" value="-1"/>-->
-<!--      <define name="IMU_ACCEL_Z_SIGN" value="-1"/>-->
-
-    </module>
+    <module name="imu"           type="mpu6000"/>
 
     <module name="gps"           type="ubx_ucenter"/>
-
     <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B38400"/>
       <configure name="GPS_PORT" value="UART4"/>
-
     </module>
 
     <module name="stabilization" type="indi_simple"/>
-    <!--<module name="stabilization" type="rate_indi"/>-->
+<!--    <module name="stabilization" type="indi"/>-->
     <module name="ins"           type="ekf2" />
-
-<!--     enable if you want it for debugging the raw ADC values, handy... -->
-<!--    <module name="adc_generic">-->
-<!--      <configure name="USE_ADC_1" value="TRUE"/>-->
-<!--      <configure name="USE_ADC_2" value="TRUE"/>-->
-<!--      <configure name="USE_ADC_3" value="TRUE"/>-->
-<!--      <configure name="USE_ADC_4" value="TRUE"/>-->
-<!--&lt;!&ndash;    <configure name="ADC_CHANNEL_GENERIC1" value="ADC_1"/>&ndash;&gt;-->
-<!--      <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>-->
-<!--&lt;!&ndash;      <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>&ndash;&gt;-->
-<!--    <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>-->
-<!--    </module>-->
-
-<!--    <configure name="USE_ADC_3" value="TRUE"/>-->
-<!--   <define name="ADC_CHANNEL_VSUPPLY" value="ADC_3"/>-->
-
-<!--    <module name="current_sensor">-->
-<!--      <configure name="USE_ADC_4" value="TRUE"/>-->
-<!--      <configure name="ADC_CURRENT_SENSOR" value="ADC_4"/>-->
-<!--      <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.1"/>-->
-<!--    </module>-->
     
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
+    <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
+
+<!--    <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> &lt;!&ndash; as in USE it for values in the AHRS &ndash;&gt;-->
     <!-- Internal MAG -->
     <module name="mag_ist8310">
       <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
@@ -119,10 +75,6 @@
 <!--      <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>-->
 <!--      <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>-->
 <!--    </module>-->
-    <!--module name="lidar" type="tfmini">
-      <configure name="TFMINI_PORT" value="UART4"/>
-      <configure name="USE_TFMINI_AGL" value="FALSE"/>
-    </module-->
 
     <module name="guidance" type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
@@ -142,8 +94,48 @@
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
       <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
+      <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>
     </module>
 
+<!--    <module name="ctrl_effectiveness_scheduling">-->
+<!--      <define name="SQUARED_ROLL_EFF" value="0.0"/>-->
+<!--      <define name="PITCH_EFF_AT_60" value="8.79"/>-->
+<!--      <define name="YAW_EFF_AT_60" value="11.52"/>-->
+<!--      &lt;!&ndash;function of the form: A + B*airspeed^2&ndash;&gt;-->
+<!--      <define name="CE_PITCH_A" value="8.79"/>-->
+<!--      <define name="CE_PITCH_B" value="0.0"/>-->
+<!--      <define name="CE_YAW_A" value="11.52"/>-->
+<!--      <define name="CE_YAW_B" value="0.0309"/>-->
+<!--    </module>-->
+<!--    <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>-->
+
+      <!-- Logger -->
+      <!--      <module name="tlsf"/>-->
+      <!--      <module name="pprzlog"/>-->
+      <!--      <module name="logger" type="sd_chibios"/>-->
+      <!--      <module name="flight_recorder"/>-->
+
+
+      <!--     enable if you want it for debugging the raw ADC values, handy... -->
+      <!--    <module name="adc_generic">-->
+      <!--      <configure name="USE_ADC_1" value="TRUE"/>-->
+      <!--      <configure name="USE_ADC_2" value="TRUE"/>-->
+      <!--      <configure name="USE_ADC_3" value="TRUE"/>-->
+      <!--      <configure name="USE_ADC_4" value="TRUE"/>-->
+      <!--&lt;!&ndash;    <configure name="ADC_CHANNEL_GENERIC1" value="ADC_1"/>&ndash;&gt;-->
+      <!--      <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>-->
+      <!--&lt;!&ndash;      <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>&ndash;&gt;-->
+      <!--    <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>-->
+      <!--    </module>-->
+
+      <!--    <configure name="USE_ADC_3" value="TRUE"/>-->
+      <!--   <define name="ADC_CHANNEL_VSUPPLY" value="ADC_3"/>-->
+
+      <!--    <module name="current_sensor">-->
+      <!--      <configure name="USE_ADC_4" value="TRUE"/>-->
+      <!--      <configure name="ADC_CURRENT_SENSOR" value="ADC_4"/>-->
+      <!--      <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.1"/>-->
+      <!--    </module>-->
   </firmware>
 
   <servos driver="Pwm">
@@ -230,7 +222,7 @@
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="6." unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="96." unit="deg"/>
     <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
   </section>
 
@@ -244,37 +236,32 @@
     <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>
   </section>
 
-
-  <section name="AHRS" prefix="AHRS_">
-    <!-- Delft -->
-
-    <!--<configure name="AHRS_ALIGNER_LED" value="2"/>--><!-- Which color you want sir? ;) -->
-    <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
-    <define name="H_X" value="0.3892503"/>
-    <define name="H_Y" value="0.0017972"/>
-    <define name="H_Z" value="0.9211303"/>
-  </section>
-
-
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness (hover) -->
-    <define name="G1_P" value="0.0030"/>
-    <define name="G1_Q" value="0.0035"/>
-    <define name="G1_R" value="0.0004"/>
-    <define name="G2_R" value="0.00015"/>
+    <define name="G1_P" value="0.0339"/>
+    <define name="G1_Q" value="0.0761"/>
+    <define name="G1_R" value="0.0022"/>
+<!--    <define name="G2_R" value="0.00015"/>-->
+    <define name="G2_R" value="0.0"/>
 
     <!-- control effectiveness (forward) -->
-    <define name="FORWARD_G1_P" value="0.0020"/>
-    <define name="FORWARD_G1_Q" value="0.0077"/>
-    <define name="FORWARD_G1_R" value="0.004"/>
+    <define name="FORWARD_G1_P" value="0.0339"/>
+    <define name="FORWARD_G1_Q" value="0.0761"/>
+    <define name="FORWARD_G1_R" value="0.0022"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="30.0"/>
-    <define name="REF_ERR_Q" value="30.0"/>
-    <define name="REF_ERR_R" value="20.0"/>
-    <define name="REF_RATE_P" value="6.0"/>
-    <define name="REF_RATE_Q" value="6.0"/>
-    <define name="REF_RATE_R" value="6.0"/>
+<!--    <define name="REF_ERR_P" value="30.0"/>-->
+<!--    <define name="REF_ERR_Q" value="30.0"/>-->
+<!--    <define name="REF_ERR_R" value="20.0"/>-->
+<!--    <define name="REF_RATE_P" value="6.0"/>-->
+<!--    <define name="REF_RATE_Q" value="6.0"/>-->
+<!--    <define name="REF_RATE_R" value="6.0"/>-->
+    <define name="REF_ERR_P" value="107.0"/>
+    <define name="REF_ERR_Q" value="200.0"/>
+    <define name="REF_ERR_R" value="200.0"/>
+    <define name="REF_RATE_P" value="14.0"/>
+    <define name="REF_RATE_Q" value="15.0"/>
+    <define name="REF_RATE_R" value="15.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
     <define name="MAX_R" value="50.0" unit="deg/s"/>
@@ -285,18 +272,20 @@
     <!-- second order filter parameters -->
     <define name="FILT_CUTOFF" value="1.5"/>
     <define name="FILT_CUTOFF_RDOT" value="0.5"/>
-    <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF_R" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.0354"/>
-    <define name="ACT_DYN_Q" value="0.0354"/>
-    <define name="ACT_DYN_R" value="0.0354"/>
+    <define name="ACT_DYN_P" value="0.1"/>
+    <define name="ACT_DYN_Q" value="0.1"/>
+    <define name="ACT_DYN_R" value="0.045"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
   </section>
+
+
 <!--  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">-->
 <!--    &lt;!&ndash; control effectiveness, scaled by INDI_G_SCALING (1000)&ndash;&gt;-->
 <!--    <define name="G1_ROLL"   value="{   0,    0,       0}"/>-->
@@ -330,6 +319,27 @@
 <!--    <define name="ADAPTIVE_MU" value="0.0001"/>-->
 <!--  </section>-->
 
+<!--  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">-->
+<!--    &lt;!&ndash; setpoints &ndash;&gt;-->
+<!--    <define name="SP_MAX_PHI"     value="40." unit="deg"/>-->
+<!--    <define name="SP_MAX_THETA"   value="20." unit="deg"/>-->
+<!--    <define name="SP_MAX_R"       value="90." unit="deg/s"/>-->
+<!--    <define name="DEADBAND_R"     value="250"/>-->
+<!--    <define name="DEADBAND_A"     value="250"/>-->
+<!--    <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>-->
+<!--  </section>-->
+
+
+  <section name="AHRS" prefix="AHRS_">
+    <!-- Delft -->
+
+    <!--<configure name="AHRS_ALIGNER_LED" value="2"/>--><!-- Which color you want sir? ;) -->
+    <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
+    <define name="H_X" value="0.3892503"/>
+    <define name="H_Y" value="0.0017972"/>
+    <define name="H_Z" value="0.9211303"/>
+  </section>
+
 
 <!--  <section name="ctrl_eff_scheduling" prefix="FWD_">-->
 <!--    &lt;!&ndash; control effectiveness, scaled by INDI_G_SCALING (1000)&ndash;&gt;-->
@@ -356,29 +366,30 @@
     <define name="IGAIN" value="20"/>
   </section>
 
-  <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-    <!--<define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>-->
-    <define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>
-    <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
-    <define name="MAX_AIRSPEED" value="12."/>
-    <define name="PITCH_LIFT_EFF" value="0.12"/>
-    <define name="HEADING_BANK_GAIN" value="15."/>
-    <define name="SPECIFIC_FORCE_GAIN" value="-1300."/>
-    <define name="THRUST_DYNAMICS" value="0.04"/>
-  </section>
+<!--  <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">-->
+<!--    <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>-->
+<!--    <define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>-->
+<!--    <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>-->
+<!--    <define name="MAX_AIRSPEED" value="12."/>-->
+<!--    <define name="PITCH_LIFT_EFF" value="0.12"/>-->
+<!--    <define name="HEADING_BANK_GAIN" value="15."/>-->
+<!--    <define name="SPECIFIC_FORCE_GAIN" value="-1300."/>-->
+<!--    <define name="THRUST_DYNAMICS" value="0.04"/>-->
+<!--  </section>-->
 
   <section name="RADIO" prefix="RADIO_">
-<!--    <define name="TH_HOLD"     value="RADIO_AUX1"/> &lt;!&ndash; Throttle hold in command laws &ndash;&gt;-->
-<!--    <define name="FMODE"       value="RADIO_AUX2"/> &lt;!&ndash; Throttle curve select &ndash;&gt;-->
+    <define name="TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
+    <define name="FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
     <define name="FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
-<!--    <define name="FLAPS"       value="RADIO_AUX4"/> &lt;!&ndash; Flaps control &ndash;&gt;-->
-<!--    <define name="KILL_SWITCH" value="RADIO_AUX1"/>-->
-<!--    <define name="BACK_THOLD"  value="RADIO_AUX5"/>-->
+    <define name="FLAPS"       value="RADIO_AUX4"/> <!-- Flaps control -->
+    <define name="KILL_SWITCH" value="RADIO_AUX1"/>
+    <define name="BACK_THOLD"  value="RADIO_AUX5"/>
   </section>
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>
+<!--    <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>-->
+    <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
@@ -398,13 +409,13 @@
   </section>
 
   <!--  Can as well be your handlaunch, a.k.a. the human catapult ;) -->
-  <section name="CATAPULT" prefix="NAV_CATAPULT_">
-    <define name="MOTOR_DELAY" value="0." unit="s"/>
-    <define name="HEADING_DELAY" value="3.0" unit="s"/>
-    <define name="ACCELERATION_THRESHOLD" value="1.1"/>
-    <define name="INITIAL_PITCH" value="20.0" unit="deg"/>
-    <define name="INITIAL_THROTTLE" value="1.0"/>
-  </section>
+<!--  <section name="CATAPULT" prefix="NAV_CATAPULT_">-->
+<!--    <define name="MOTOR_DELAY" value="0." unit="s"/>-->
+<!--    <define name="HEADING_DELAY" value="3.0" unit="s"/>-->
+<!--    <define name="ACCELERATION_THRESHOLD" value="1.1"/>-->
+<!--    <define name="INITIAL_PITCH" value="20.0" unit="deg"/>-->
+<!--    <define name="INITIAL_THROTTLE" value="1.0"/>-->
+<!--  </section>-->
 
   <section name="GLS_APPROACH" prefix="APP_">
     <define name="DISTANCE_AF_SD" value="30" unit="m"/>
