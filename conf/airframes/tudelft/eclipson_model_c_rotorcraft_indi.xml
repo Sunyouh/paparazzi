@@ -30,7 +30,18 @@
 <!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
 <!--      </module>-->
 
-      <module name="scheduling_indi_simple"/>
+<!--        <define name="USE_AIRSPEED" value="TRUE"/>-->
+    <module name="airspeed" type="ms45xx_i2c">
+        <define name="USE_I2C4"/>
+        <!--      <define name="MS45XX_SYNC_SEND" value="TRUE"/>-->
+        <define name="MS45XX_I2C_DEV" value="i2c4"/>
+        <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
+        <!--      <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/>-->
+        <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- TODO: find optimum value for stock Disco -->
+        <define name="MS45XX_PRESSURE_RANGE" value="1"/>
+    </module>
+
+<!--      <module name="scheduling_indi_simple"/>-->
 <!--      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>-->
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/>  <!--Throttle hold in command laws-->
@@ -54,8 +65,8 @@
       <configure name="GPS_PORT" value="UART4"/>
     </module>
 
-    <module name="stabilization" type="indi_simple"/>
-<!--    <module name="stabilization" type="indi"/>-->
+<!--    <module name="stabilization" type="indi_simple"/>-->
+    <module name="stabilization" type="indi"/>
     <module name="ins"           type="ekf2" />
     
     <module name="air_data"/>
@@ -97,23 +108,23 @@
       <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>
     </module>
 
-<!--    <module name="ctrl_effectiveness_scheduling">-->
-<!--      <define name="SQUARED_ROLL_EFF" value="0.0"/>-->
-<!--      <define name="PITCH_EFF_AT_60" value="8.79"/>-->
-<!--      <define name="YAW_EFF_AT_60" value="11.52"/>-->
-<!--      &lt;!&ndash;function of the form: A + B*airspeed^2&ndash;&gt;-->
-<!--      <define name="CE_PITCH_A" value="8.79"/>-->
-<!--      <define name="CE_PITCH_B" value="0.0"/>-->
-<!--      <define name="CE_YAW_A" value="11.52"/>-->
-<!--      <define name="CE_YAW_B" value="0.0309"/>-->
-<!--    </module>-->
-<!--    <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>-->
+    <module name="ctrl_effectiveness_scheduling">
+      <define name="SQUARED_ROLL_EFF" value="0.0"/>
+      <define name="PITCH_EFF_AT_60" value="8.79"/>
+      <define name="YAW_EFF_AT_60" value="11.52"/>
+      <!--function of the form: A + B*airspeed^2-->
+      <define name="CE_PITCH_A" value="8.79"/>
+      <define name="CE_PITCH_B" value="0.0"/>
+      <define name="CE_YAW_A" value="11.52"/>
+      <define name="CE_YAW_B" value="0.0309"/>
+    </module>
+    <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
 
       <!-- Logger -->
-      <!--      <module name="tlsf"/>-->
-      <!--      <module name="pprzlog"/>-->
-      <!--      <module name="logger" type="sd_chibios"/>-->
-      <!--      <module name="flight_recorder"/>-->
+            <module name="tlsf"/>
+            <module name="pprzlog"/>
+            <module name="logger" type="sd_chibios"/>
+            <module name="flight_recorder"/>
 
 
       <!--     enable if you want it for debugging the raw ADC values, handy... -->
@@ -141,9 +152,9 @@
   <servos driver="Pwm">
     <servo name="S_THROTTLE" no="0" min="1100" neutral="1110" max="1900"/>
     <servo name="S_AILERON_LEFT" no="1" min="1900" neutral="1500" max="1100"/>
-    <servo name="S_AILERON_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_AILERON_RIGHT" no="4" min="1100" neutral="1460" max="1900"/>
     <servo name="S_ELEVATOR" no="2" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_RUDDER" no="3" min="1900" neutral="1500" max="1100"/>
+    <servo name="S_RUDDER" no="3" min="1900" neutral="1510" max="1100"/>
   </servos>
 
   <commands>
@@ -226,76 +237,36 @@
     <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
   </section>
 
-  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
-    <!-- setpoints -->
-    <define name="SP_MAX_PHI"     value="40." unit="deg"/>
-    <define name="SP_MAX_THETA"   value="20." unit="deg"/>
-    <define name="SP_MAX_R"       value="90." unit="deg/s"/>
-    <define name="DEADBAND_R"     value="0"/>
-    <define name="DEADBAND_A"     value="50"/>
-    <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>
-  </section>
-
-  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-    <!-- control effectiveness (hover) -->
-    <define name="G1_P" value="0.0339"/>
-    <define name="G1_Q" value="0.0761"/>
-    <define name="G1_R" value="0.0022"/>
-<!--    <define name="G2_R" value="0.00015"/>-->
-    <define name="G2_R" value="0.0"/>
-
-    <!-- control effectiveness (forward) -->
-    <define name="FORWARD_G1_P" value="0.0339"/>
-    <define name="FORWARD_G1_Q" value="0.0761"/>
-    <define name="FORWARD_G1_R" value="0.0022"/>
-
-    <!-- reference acceleration for attitude control -->
-<!--    <define name="REF_ERR_P" value="30.0"/>-->
-<!--    <define name="REF_ERR_Q" value="30.0"/>-->
-<!--    <define name="REF_ERR_R" value="20.0"/>-->
-<!--    <define name="REF_RATE_P" value="6.0"/>-->
-<!--    <define name="REF_RATE_Q" value="6.0"/>-->
-<!--    <define name="REF_RATE_R" value="6.0"/>-->
-    <define name="REF_ERR_P" value="107.0"/>
-    <define name="REF_ERR_Q" value="200.0"/>
-    <define name="REF_ERR_R" value="200.0"/>
-    <define name="REF_RATE_P" value="14.0"/>
-    <define name="REF_RATE_Q" value="15.0"/>
-    <define name="REF_RATE_R" value="15.0"/>
-
-    <!--Maxium yaw rate, to avoid instability-->
-    <define name="MAX_R" value="50.0" unit="deg/s"/>
-
-    <!-- Maximum rate setpoint in rate control mode -->
-    <define name="MAX_RATE" value="3.0" unit="rad/s"/>
-
-    <!-- second order filter parameters -->
-    <define name="FILT_CUTOFF" value="1.5"/>
-    <define name="FILT_CUTOFF_RDOT" value="0.5"/>
-    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-    <define name="FILT_CUTOFF_R" value="4.0"/>
-
-    <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.1"/>
-    <define name="ACT_DYN_Q" value="0.1"/>
-    <define name="ACT_DYN_R" value="0.045"/>
-
-    <!-- Adaptive Learning Rate -->
-    <define name="USE_ADAPTIVE" value="FALSE"/>
-    <define name="ADAPTIVE_MU" value="0.0001"/>
-  </section>
-
+<!--  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">-->
+<!--    &lt;!&ndash; setpoints &ndash;&gt;-->
+<!--    <define name="SP_MAX_PHI"     value="40." unit="deg"/>-->
+<!--    <define name="SP_MAX_THETA"   value="20." unit="deg"/>-->
+<!--    <define name="SP_MAX_R"       value="90." unit="deg/s"/>-->
+<!--    <define name="DEADBAND_R"     value="0"/>-->
+<!--    <define name="DEADBAND_A"     value="50"/>-->
+<!--    <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>-->
+<!--  </section>-->
 
 <!--  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">-->
-<!--    &lt;!&ndash; control effectiveness, scaled by INDI_G_SCALING (1000)&ndash;&gt;-->
-<!--    <define name="G1_ROLL"   value="{   0,    0,       0}"/>-->
-<!--    <define name="G1_PITCH"  value="{-8.79,   8.79,    0}"/>-->
-<!--    <define name="G1_YAW"    value="{-15.97,  -15.97,    0}"/>-->
-<!--    <define name="G1_THRUST" value="{    0,   0,    -0.7}"/>-->
-<!--    &lt;!&ndash;Counter torque effect of spinning up a rotor&ndash;&gt;-->
-<!--    <define name="G2" value="{0, 0, 0}"/>-->
+<!--    &lt;!&ndash; control effectiveness (hover) &ndash;&gt;-->
+<!--    <define name="G1_P" value="0.0339"/>-->
+<!--    <define name="G1_Q" value="0.0761"/>-->
+<!--    <define name="G1_R" value="0.0022"/>-->
+<!--&lt;!&ndash;    <define name="G2_R" value="0.00015"/>&ndash;&gt;-->
+<!--    <define name="G2_R" value="0.0"/>-->
+
+<!--    &lt;!&ndash; control effectiveness (forward) &ndash;&gt;-->
+<!--    <define name="FORWARD_G1_P" value="0.0339"/>-->
+<!--    <define name="FORWARD_G1_Q" value="0.0761"/>-->
+<!--    <define name="FORWARD_G1_R" value="0.0022"/>-->
 
 <!--    &lt;!&ndash; reference acceleration for attitude control &ndash;&gt;-->
+<!--&lt;!&ndash;    <define name="REF_ERR_P" value="30.0"/>&ndash;&gt;-->
+<!--&lt;!&ndash;    <define name="REF_ERR_Q" value="30.0"/>&ndash;&gt;-->
+<!--&lt;!&ndash;    <define name="REF_ERR_R" value="20.0"/>&ndash;&gt;-->
+<!--&lt;!&ndash;    <define name="REF_RATE_P" value="6.0"/>&ndash;&gt;-->
+<!--&lt;!&ndash;    <define name="REF_RATE_Q" value="6.0"/>&ndash;&gt;-->
+<!--&lt;!&ndash;    <define name="REF_RATE_R" value="6.0"/>&ndash;&gt;-->
 <!--    <define name="REF_ERR_P" value="107.0"/>-->
 <!--    <define name="REF_ERR_Q" value="200.0"/>-->
 <!--    <define name="REF_ERR_R" value="200.0"/>-->
@@ -304,30 +275,70 @@
 <!--    <define name="REF_RATE_R" value="15.0"/>-->
 
 <!--    &lt;!&ndash;Maxium yaw rate, to avoid instability&ndash;&gt;-->
-<!--    <define name="MAX_R" value="100.0" unit="deg/s"/>-->
+<!--    <define name="MAX_R" value="50.0" unit="deg/s"/>-->
 
+<!--    &lt;!&ndash; Maximum rate setpoint in rate control mode &ndash;&gt;-->
+<!--    <define name="MAX_RATE" value="3.0" unit="rad/s"/>-->
+
+<!--    &lt;!&ndash; second order filter parameters &ndash;&gt;-->
+<!--    <define name="FILT_CUTOFF" value="1.5"/>-->
+<!--    <define name="FILT_CUTOFF_RDOT" value="0.5"/>-->
 <!--    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>-->
-<!--    <define name="FILT_CUTOFF" value="5.0"/>-->
+<!--    <define name="FILT_CUTOFF_R" value="4.0"/>-->
 
 <!--    &lt;!&ndash; first order actuator dynamics &ndash;&gt;-->
-<!--    <define name="ACT_DYN" value="{0.1, 0.1, 0.045}"/>-->
-<!--    <define name="ACT_RATE_LIMIT" value="{170, 170, 9600}"/>-->
-<!--    <define name="ACT_IS_SERVO" value="{1, 1, 0}"/>-->
+<!--    <define name="ACT_DYN_P" value="0.1"/>-->
+<!--    <define name="ACT_DYN_Q" value="0.1"/>-->
+<!--    <define name="ACT_DYN_R" value="0.045"/>-->
 
 <!--    &lt;!&ndash; Adaptive Learning Rate &ndash;&gt;-->
 <!--    <define name="USE_ADAPTIVE" value="FALSE"/>-->
 <!--    <define name="ADAPTIVE_MU" value="0.0001"/>-->
 <!--  </section>-->
 
-<!--  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">-->
-<!--    &lt;!&ndash; setpoints &ndash;&gt;-->
-<!--    <define name="SP_MAX_PHI"     value="40." unit="deg"/>-->
-<!--    <define name="SP_MAX_THETA"   value="20." unit="deg"/>-->
-<!--    <define name="SP_MAX_R"       value="90." unit="deg/s"/>-->
-<!--    <define name="DEADBAND_R"     value="250"/>-->
-<!--    <define name="DEADBAND_A"     value="250"/>-->
-<!--    <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>-->
-<!--  </section>-->
+
+  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+    <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
+    <define name="G1_ROLL"   value="{   0,    0,       0}"/>
+    <define name="G1_PITCH"  value="{-8.79,   8.79,    0}"/>
+    <define name="G1_YAW"    value="{-15.97,  -15.97,    0}"/>
+    <define name="G1_THRUST" value="{    0,   0,    -0.7}"/>
+    <!--Counter torque effect of spinning up a rotor-->
+    <define name="G2" value="{0, 0, 0}"/>
+
+    <!-- reference acceleration for attitude control -->
+    <define name="REF_ERR_P" value="107.0"/>
+    <define name="REF_ERR_Q" value="200.0"/>
+    <define name="REF_ERR_R" value="200.0"/>
+    <define name="REF_RATE_P" value="14.0"/>
+    <define name="REF_RATE_Q" value="15.0"/>
+    <define name="REF_RATE_R" value="15.0"/>
+
+    <!--Maxium yaw rate, to avoid instability-->
+    <define name="MAX_R" value="100.0" unit="deg/s"/>
+
+    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
+    <define name="FILT_CUTOFF" value="5.0"/>
+
+    <!-- first order actuator dynamics -->
+    <define name="ACT_DYN" value="{0.1, 0.1, 0.045}"/>
+    <define name="ACT_RATE_LIMIT" value="{170, 170, 9600}"/>
+    <define name="ACT_IS_SERVO" value="{1, 1, 0}"/>
+
+    <!-- Adaptive Learning Rate -->
+    <define name="USE_ADAPTIVE" value="FALSE"/>
+    <define name="ADAPTIVE_MU" value="0.0001"/>
+  </section>
+
+  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
+    <!-- setpoints -->
+    <define name="SP_MAX_PHI"     value="40." unit="deg"/>
+    <define name="SP_MAX_THETA"   value="20." unit="deg"/>
+    <define name="SP_MAX_R"       value="90." unit="deg/s"/>
+    <define name="DEADBAND_R"     value="250"/>
+    <define name="DEADBAND_A"     value="250"/>
+    <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>
+  </section>
 
 
   <section name="AHRS" prefix="AHRS_">
@@ -341,13 +352,13 @@
   </section>
 
 
-<!--  <section name="ctrl_eff_scheduling" prefix="FWD_">-->
-<!--    &lt;!&ndash; control effectiveness, scaled by INDI_G_SCALING (1000)&ndash;&gt;-->
-<!--    <define name="G1_ROLL"   value="{    0,     0,    0}"/>-->
-<!--    <define name="G1_PITCH"  value="{-8.79,  8.79,    0}"/>-->
-<!--    <define name="G1_YAW"    value="{-11.52, -11.52,    0}"/>-->
-<!--    <define name="G1_THRUST" value="{    0,     0, -0.7}"/>-->
-<!--  </section>-->
+  <section name="ctrl_eff_scheduling" prefix="FWD_">
+    <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
+    <define name="G1_ROLL"   value="{    0,     0,    0}"/>
+    <define name="G1_PITCH"  value="{-8.79,  8.79,    0}"/>
+    <define name="G1_YAW"    value="{-11.52, -11.52,    0}"/>
+    <define name="G1_THRUST" value="{    0,     0, -0.7}"/>
+  </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP"    value="310"/>
@@ -366,16 +377,16 @@
     <define name="IGAIN" value="20"/>
   </section>
 
-<!--  <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">-->
-<!--    <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>-->
-<!--    <define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>-->
-<!--    <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>-->
-<!--    <define name="MAX_AIRSPEED" value="12."/>-->
-<!--    <define name="PITCH_LIFT_EFF" value="0.12"/>-->
-<!--    <define name="HEADING_BANK_GAIN" value="15."/>-->
-<!--    <define name="SPECIFIC_FORCE_GAIN" value="-1300."/>-->
-<!--    <define name="THRUST_DYNAMICS" value="0.04"/>-->
-<!--  </section>-->
+  <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
+    <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
+    <define name="GUIDANCE_INDI_MIN_THROTTLE" value="0.2"/>
+    <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+    <define name="MAX_AIRSPEED" value="12."/>
+    <define name="PITCH_LIFT_EFF" value="0.12"/>
+    <define name="HEADING_BANK_GAIN" value="15."/>
+    <define name="SPECIFIC_FORCE_GAIN" value="-1300."/>
+    <define name="THRUST_DYNAMICS" value="0.04"/>
+  </section>
 
   <section name="RADIO" prefix="RADIO_">
     <define name="TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
@@ -392,7 +403,7 @@
     <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
-    <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
+<!--    <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>-->
 <!--    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="FALSE"/>-->
   </section>
 

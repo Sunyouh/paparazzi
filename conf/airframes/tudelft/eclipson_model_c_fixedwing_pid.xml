@@ -36,10 +36,26 @@
     </module>
     <!--module name="lidar" type="tfmini"/-->
 
-    <!--module name="airspeed" type="ms45xx_i2c">
+
+    <define name="USE_AIRSPEED" value="TRUE"/>
+    <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
+<!--      <define name="MS45XX_SYNC_SEND" value="TRUE"/>-->
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
-    </module-->
+      <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
+<!--      <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/>-->
+            <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- TODO: find optimum value for stock Disco -->
+<!--      <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>-->
+      <define name="MS45XX_PRESSURE_RANGE" value="1"/>
+<!--      <define name="MS45XX_OUTPUT_TYPE" value="1"/>-->
+<!--      <define name="MS45XX_PRESSURE_OUTPUT_TYPE_InH2O" value="1" />-->
+    </module>
+
+<!--    <module name="airspeed_ets.xml">-->
+<!--      <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>-->
+<!--      <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
+<!--    </module>-->
+
     <module name="air_data"/>
 
 <!--    <module name="control" type="energy"/>-->
@@ -232,6 +248,10 @@
     <!-- power -->
     <define name="POWER_CTL_BAT_NOMINAL" value="11.5" unit="volt"/>
 
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="5.0" unit="m/s"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.8"/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.2"/>
+
     <!-- Classic -->
     <!-- outer loop proportional gain -->
     <define name="ALTITUDE_PGAIN" value="0.15"/> <!--unit="(m/s)/m"-->
@@ -240,7 +260,7 @@
     <!-- auto throttle -->
     <!-- Cruise throttle + limits -->
     <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0.30" unit="%"/>  <!-- TODO: Determine -->
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.50" unit="%"/> <!-- TODO: Determine -->
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.45" unit="%"/> <!-- TODO: Determine -->
     <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="0.90" unit="%"/>
 
     <define name="AUTO_THROTTLE_LOITER_TRIM" value="1000" unit="pprz_t"/>
@@ -249,10 +269,10 @@
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.39" unit="%/(m/s)"/> <!-- TODO: Determine -->
 
     <!-- Climb loop (throttle) -->
-    <define name="AUTO_THROTTLE_PGAIN" value="0.005" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_PGAIN" value="0.003" unit="%/(m/s)"/>
     <define name="AUTO_THROTTLE_IGAIN" value="0.002"/>
     <define name="AUTO_THROTTLE_DGAIN" value="0.0"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.11" unit="rad/(m/s)"/> <!-- TODO: Determine -->
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.2" unit="rad/(m/s)"/> <!-- TODO: Determine -->
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0." unit="rad"/> <!-- default 0 -->
 
     <define name="THROTTLE_SLEW_LIMITER" value="0.6" unit="m/s/s"/>  <!-- Limiter for e.g. a powerful motor -->
