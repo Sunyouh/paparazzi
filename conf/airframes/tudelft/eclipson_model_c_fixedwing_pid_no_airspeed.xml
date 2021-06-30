@@ -37,19 +37,19 @@
     <!--module name="lidar" type="tfmini"/-->
 
 
-    <define name="USE_AIRSPEED" value="TRUE"/>
-    <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/>
-<!--      <define name="MS45XX_SYNC_SEND" value="TRUE"/>-->
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
-      <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
-<!--      <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/>-->
-            <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- TODO: find optimum value for stock Disco -->
-<!--      <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>-->
-      <define name="MS45XX_PRESSURE_RANGE" value="1"/>
-<!--      <define name="MS45XX_OUTPUT_TYPE" value="1"/>-->
-<!--      <define name="MS45XX_PRESSURE_OUTPUT_TYPE_InH2O" value="1" />-->
-    </module>
+<!--    <define name="USE_AIRSPEED" value="TRUE"/>-->
+<!--    <module name="airspeed" type="ms45xx_i2c">-->
+<!--        <define name="USE_I2C4"/>-->
+<!--&lt;!&ndash;      <define name="MS45XX_SYNC_SEND" value="TRUE"/>&ndash;&gt;-->
+<!--        <define name="MS45XX_I2C_DEV" value="i2c4"/>-->
+<!--      &lt;!&ndash;Gives cut-off freq of 1/(2*pi*tau) in 1Hz &ndash;&gt;-->
+<!--&lt;!&ndash;      <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/>&ndash;&gt;-->
+<!--            <define name="MS45XX_LOWPASS_TAU" value="0.25"/> &lt;!&ndash; TODO: find optimum value for stock Disco &ndash;&gt;-->
+<!--&lt;!&ndash;      <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>&ndash;&gt;-->
+<!--      <define name="MS45XX_PRESSURE_RANGE" value="1"/>-->
+<!--&lt;!&ndash;      <define name="MS45XX_OUTPUT_TYPE" value="1"/>&ndash;&gt;-->
+<!--&lt;!&ndash;      <define name="MS45XX_PRESSURE_OUTPUT_TYPE_InH2O" value="1" />&ndash;&gt;-->
+<!--    </module>-->
 
 <!--    <module name="airspeed_ets.xml">-->
 <!--      <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>-->
